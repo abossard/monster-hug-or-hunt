@@ -1,11 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Plus, Trophy, Target, CheckCircle } from '@phosphor-icons/react'
+import { Plus, Trophy, Target, CheckCircle, Play, Pause, Square, Clock } from '@phosphor-icons/react'
 import { useKV } from '@github/spark/hooks'
 import { toast } from 'sonner'
 
@@ -28,11 +28,119 @@ const motivationalMessages = [
   "Klasse! Deine Disziplin beeindruckt! 🌟"
 ]
 
+const breakMessages = [
+  "Zeit für eine wohlverdiente Pause! 🌸",
+  "Pause Zeit! Dein Gehirn braucht Erholung 🧠",
+  "Super Lernzeit! Jetzt erstmal entspannen ☕",
+  "Perfekt gelernt! Gönn dir eine Pause 🎯",
+  "Zeit zum Durchatmen! Du hast es dir verdient 🌟",
+  "Lernziel erreicht! Jetzt relaxen 😌",
+  "Fantastische Session! Pause ist angesagt 🚀",
+  "Auszeit! Lass dein Wissen sacken ✨"
+]
+
 function App() {
   const [newTodoText, setNewTodoText] = useState('')
   const [newTodoPoints, setNewTodoPoints] = useState('1')
   const [todos, setTodos] = useKV<Todo[]>('study-todos', [])
   const [totalPoints, setTotalPoints] = useKV<number>('study-total-points', 0)
+  
+  // Timer state
+  const [timerMinutes, setTimerMinutes] = useState('25')
+  const [timeLeft, setTimeLeft] = useState(0) // in seconds
+  const [isTimerRunning, setIsTimerRunning] = useState(false)
+  const [isTimerPaused, setIsTimerPaused] = useState(false)
+  const timerRef = useRef<NodeJS.Timeout | null>(null)
+  const audioContextRef = useRef<AudioContext | null>(null)
+
+  // Initialize audio context
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)()
+    }
+    return () => {
+      if (audioContextRef.current) {
+        audioContextRef.current.close()
+      }
+    }
+  }, [])
+
+  // Timer effect
+  useEffect(() => {
+    if (isTimerRunning && !isTimerPaused && timeLeft > 0) {
+      timerRef.current = setTimeout(() => {
+        setTimeLeft(prev => prev - 1)
+      }, 1000)
+    } else if (timeLeft === 0 && isTimerRunning) {
+      // Timer finished
+      setIsTimerRunning(false)
+      setIsTimerPaused(false)
+      playNotificationSound()
+      const randomBreakMessage = breakMessages[Math.floor(Math.random() * breakMessages.length)]
+      toast.success(randomBreakMessage, {
+        description: 'Zeit für eine Pause! Du hast konzentriert gelernt.',
+        duration: 5000,
+      })
+    }
+
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current)
+      }
+    }
+  }, [isTimerRunning, isTimerPaused, timeLeft])
+
+  const playNotificationSound = () => {
+    if (!audioContextRef.current) return
+    
+    try {
+      const oscillator = audioContextRef.current.createOscillator()
+      const gainNode = audioContextRef.current.createGain()
+      
+      oscillator.connect(gainNode)
+      gainNode.connect(audioContextRef.current.destination)
+      
+      oscillator.frequency.setValueAtTime(800, audioContextRef.current.currentTime)
+      oscillator.frequency.setValueAtTime(600, audioContextRef.current.currentTime + 0.1)
+      oscillator.frequency.setValueAtTime(800, audioContextRef.current.currentTime + 0.2)
+      
+      gainNode.gain.setValueAtTime(0.3, audioContextRef.current.currentTime)
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContextRef.current.currentTime + 0.3)
+      
+      oscillator.start(audioContextRef.current.currentTime)
+      oscillator.stop(audioContextRef.current.currentTime + 0.3)
+    } catch (error) {
+      console.log('Audio playback not available')
+    }
+  }
+
+  const startTimer = () => {
+    if (!isTimerRunning) {
+      setTimeLeft(parseInt(timerMinutes) * 60)
+    }
+    setIsTimerRunning(true)
+    setIsTimerPaused(false)
+  }
+
+  const pauseTimer = () => {
+    setIsTimerPaused(true)
+  }
+
+  const resumeTimer = () => {
+    setIsTimerPaused(false)
+  }
+
+  const stopTimer = () => {
+    setIsTimerRunning(false)
+    setIsTimerPaused(false)
+    setTimeLeft(0)
+  }
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+  }
 
   const addTodo = () => {
     if (!newTodoText.trim()) return
@@ -110,6 +218,83 @@ function App() {
             <p className="text-sm text-muted-foreground">
               Dein bisheriger Erfolg im Studium
             </p>
+          </CardContent>
+        </Card>
+
+        {/* Study Timer */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="w-5 h-5" />
+              Lerntimer
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {/* Timer Display */}
+              <div className="text-center">
+                <div className="text-6xl font-bold text-primary mb-2">
+                  {timeLeft > 0 ? formatTime(timeLeft) : formatTime(parseInt(timerMinutes) * 60)}
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {isTimerRunning ? (isTimerPaused ? 'Pausiert' : 'Läuft...') : 'Bereit zum Lernen'}
+                </p>
+              </div>
+
+              {/* Timer Controls */}
+              <div className="flex items-center gap-3">
+                {!isTimerRunning ? (
+                  <>
+                    <Select value={timerMinutes} onValueChange={setTimerMinutes}>
+                      <SelectTrigger className="flex-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[20, 25, 30, 35, 40, 45, 50, 55, 60].map(minutes => (
+                          <SelectItem key={minutes} value={minutes.toString()}>
+                            {minutes} Minuten
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button onClick={startTimer} className="flex-1">
+                      <Play className="w-4 h-4 mr-2" />
+                      Start
+                    </Button>
+                  </>
+                ) : (
+                  <div className="flex gap-2 w-full">
+                    {isTimerPaused ? (
+                      <Button onClick={resumeTimer} className="flex-1">
+                        <Play className="w-4 h-4 mr-2" />
+                        Fortsetzen
+                      </Button>
+                    ) : (
+                      <Button onClick={pauseTimer} variant="secondary" className="flex-1">
+                        <Pause className="w-4 h-4 mr-2" />
+                        Pause
+                      </Button>
+                    )}
+                    <Button onClick={stopTimer} variant="destructive">
+                      <Square className="w-4 h-4 mr-2" />
+                      Stop
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              {/* Timer Progress Bar */}
+              {isTimerRunning && (
+                <div className="w-full bg-muted rounded-full h-2">
+                  <div 
+                    className="bg-primary h-2 rounded-full transition-all duration-1000 ease-linear"
+                    style={{ 
+                      width: `${((parseInt(timerMinutes) * 60 - timeLeft) / (parseInt(timerMinutes) * 60)) * 100}%` 
+                    }}
+                  />
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
 

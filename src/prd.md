@@ -12,11 +12,13 @@
 ## Thought Process for Feature Selection
 - **Core Problem Analysis**: Studierende brauchen Motivation und Struktur beim Lernen; traditionelle To-Do-Listen sind oft nicht motivierend genug.
 - **User Context**: Während Lernphasen, zur Tagesplanung und zur Erfolgsmessung.
-- **Critical Path**: Aufgabe erstellen → Punkte zuweisen → Aufgabe erledigen → Belohnung erhalten → Motivation steigern
+- **Critical Path**: Timer einstellen → Timer starten → lernen → Pausenerinnerung erhalten → Aufgabe erstellen → Punkte zuweisen → Aufgabe erledigen → Belohnung erhalten → Motivation steigern
 - **Key Moments**: 
-  1. Aufgabe mit Punkten erstellen
-  2. Aufgabe abhaken und Belohnung erhalten
-  3. Gesamtpunktestand betrachten
+  1. Timer für Lernsession starten
+  2. Pausenerinnerung mit Sound erhalten
+  3. Aufgabe mit Punkten erstellen
+  4. Aufgabe abhaken und Belohnung erhalten
+  5. Gesamtpunktestand betrachten
 
 ## Essential Features
 
@@ -44,6 +46,11 @@
 - **Funktionalität**: Anzeige des aktuellen Gesamtpunktestands
 - **Zweck**: Langfristige Motivation durch sichtbaren Fortschritt
 - **Erfolgskriterium**: Punkte werden korrekt berechnet und persistent gespeichert
+
+### Lerntimer
+- **Funktionalität**: Einstellbarer Timer (20-60 Minuten) für Lernphasen mit Start/Pause/Stop-Kontrollen
+- **Zweck**: Strukturierte Lernphasen fördern und Pausen-Erinnerungen geben
+- **Erfolgskriterium**: Timer läuft präzise, spielt Benachrichtigungston ab und zeigt motivierende Pausenmeldungen
 
 ## Design Direction
 
@@ -86,13 +93,17 @@
 
 ### UI Elements & Component Selection
 - **Component Usage**: 
+  - Timer display mit großer Zeitanzeige
+  - Select für Minutenauswahl (20-60 Min)
+  - Play/Pause/Stop Buttons für Timer-Kontrolle
+  - Progress Bar für visuelle Timer-Anzeige
   - Input + Button für neue To-Dos
   - Select für Punkteauswahl
   - Checkbox + Card für To-Do-Items
   - Badge für Punkteanzeige
-  - Toast für Belohnungsmeldungen
+  - Toast für Belohnungsmeldungen und Pausenerinnerungen
 - **Component States**: Hover-Effekte bei Buttons, Check-Animationen
-- **Icon Selection**: Checkmarks, Plus, Trophy/Star für Belohnungen
+- **Icon Selection**: Clock für Timer, Play/Pause/Stop für Timer-Kontrolle, Checkmarks, Plus, Trophy/Star für Belohnungen
 
 ## Implementation Considerations
 - **Scalability Needs**: Persistent Storage für To-Dos und Punkte
