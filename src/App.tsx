@@ -102,13 +102,22 @@ function App() {
         setTimeLeft(prev => prev - 1)
       }, 1000)
     } else if (timeLeft === 0 && isTimerRunning) {
-      // Timer finished
+      // Timer finished - calculate points based on study time
+      const studyTimeInMinutes = parseInt(timerMinutes)
+      const pointsEarned = Math.floor((studyTimeInMinutes / 60) * 10) // 10 points per hour
+      
       setIsTimerRunning(false)
       setIsTimerPaused(false)
+      
+      // Award points for study time
+      if (pointsEarned > 0) {
+        setTotalPoints(current => current + pointsEarned)
+      }
+      
       playNotificationSound()
       const randomBreakMessage = breakMessages[Math.floor(Math.random() * breakMessages.length)]
       toast.success(randomBreakMessage, {
-        description: 'Zeit für eine Pause! Du hast konzentriert gelernt.',
+        description: `Zeit für eine Pause! Du hast konzentriert gelernt und ${pointsEarned} Punkte erhalten!`,
         duration: 5000,
       })
     }
@@ -118,7 +127,7 @@ function App() {
         clearTimeout(timerRef.current)
       }
     }
-  }, [isTimerRunning, isTimerPaused, timeLeft])
+  }, [isTimerRunning, isTimerPaused, timeLeft, timerMinutes, setTotalPoints])
 
   const playNotificationSound = () => {
     if (!audioContextRef.current) return
@@ -161,6 +170,21 @@ function App() {
   }
 
   const stopTimer = () => {
+    // Calculate points for partial study time when manually stopping
+    if (isTimerRunning && timeLeft > 0) {
+      const studiedTime = parseInt(timerMinutes) * 60 - timeLeft // in seconds
+      const studiedMinutes = Math.floor(studiedTime / 60)
+      const pointsEarned = Math.floor((studiedMinutes / 60) * 10) // 10 points per hour
+      
+      if (pointsEarned > 0) {
+        setTotalPoints(current => current + pointsEarned)
+        toast.success(`Lernsession beendet! 📚`, {
+          description: `Du hast ${studiedMinutes} Minuten gelernt und ${pointsEarned} Punkte erhalten!`,
+          duration: 4000,
+        })
+      }
+    }
+    
     setIsTimerRunning(false)
     setIsTimerPaused(false)
     setTimeLeft(0)
@@ -343,6 +367,9 @@ function App() {
                   <Clock className="w-5 h-5" />
                   Lerntimer
                 </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  ⏰ Erhalte 10 Punkte pro Stunde Lernzeit!
+                </p>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -354,6 +381,10 @@ function App() {
                     <p className="text-sm text-muted-foreground">
                       {isTimerRunning ? (isTimerPaused ? 'Pausiert' : 'Läuft...') : 'Bereit zum Lernen'}
                     </p>
+                    {/* Points info */}
+                    <div className="mt-2 text-xs text-muted-foreground">
+                      💰 {Math.floor((parseInt(timerMinutes) / 60) * 10)} Punkte für diese Session
+                    </div>
                   </div>
 
                   {/* Timer Controls */}
