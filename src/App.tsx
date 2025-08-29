@@ -1455,221 +1455,10 @@ function App() {
             )}
 
             {/* Main Garden Layout - Split into two columns */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[800px]">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[900px]">
               
-              {/* Left Column - Scrollable Shop & Controls */}
-              <div className="space-y-4 overflow-y-auto pr-2" style={{ maxHeight: '800px' }}>
-                
-                {/* Garden Stats */}
-                <div className="grid grid-cols-1 gap-4">
-                  <Card>
-                    <CardContent className="pt-6">
-                      <div className="flex items-center space-x-2">
-                        <Flower className="w-5 h-5 text-primary" />
-                        <div>
-                          <p className="text-xl font-bold">{(plantedFlowers || []).length}</p>
-                          <p className="text-xs text-muted-foreground">Gepflanzte Pflanzen</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card>
-                    <CardContent className="pt-6">
-                      <div className="flex items-center space-x-2">
-                        <Trophy className="w-5 h-5 text-accent" />
-                        <div>
-                          <p className="text-xl font-bold">{getGardenStats().totalValue}</p>
-                          <p className="text-xs text-muted-foreground">Gartenwert</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card>
-                    <CardContent className="pt-6">
-                      <div className="flex items-center space-x-2">
-                        <TrendUp className="w-5 h-5 text-secondary" />
-                        <div>
-                          <p className="text-xl font-bold flex items-center gap-1">
-                            {getGardenStats().passiveIncome.toFixed(1)}/h
-                            {normalizedCurrentWeather && new Date() < normalizedCurrentWeather.endTime && normalizedCurrentWeather.condition.pointsMultiplier !== 1.0 && (
-                              <span className={`text-xs ${normalizedCurrentWeather.condition.pointsMultiplier > 1 ? 'text-green-600' : 'text-red-600'}`}>
-                                {normalizedCurrentWeather.condition.emoji}
-                              </span>
-                            )}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Passive Punkte
-                            {normalizedCurrentWeather && new Date() < normalizedCurrentWeather.endTime && normalizedCurrentWeather.condition.pointsMultiplier !== 1.0 && (
-                              <span className={`ml-1 ${normalizedCurrentWeather.condition.pointsMultiplier > 1 ? 'text-green-600' : 'text-red-600'}`}>
-                                ({normalizedCurrentWeather.condition.pointsMultiplier > 1 ? '+' : ''}
-                                {((normalizedCurrentWeather.condition.pointsMultiplier - 1) * 100).toFixed(0)}%)
-                              </span>
-                            )}
-                          </p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {/* Weather Forecast - Compact */}
-                <Card>
-                  <CardHeader className="pb-4">
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      🌤️ Wettervorhersage
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-3 gap-2">
-                      {weatherConditions.slice(0, 6).map((condition, index) => (
-                        <div 
-                          key={condition.id}
-                          className={`text-center p-2 rounded border transition-all cursor-pointer hover:bg-muted/50 ${
-                            normalizedCurrentWeather?.condition.id === condition.id ? 'border-accent bg-accent/20' : 'border-muted'
-                          }`}
-                          onClick={() => {
-                            const newWeather: CurrentWeather = {
-                              condition,
-                              startTime: new Date(),
-                              endTime: new Date(Date.now() + condition.duration * 60 * 60 * 1000)
-                            }
-                            setCurrentWeather(newWeather)
-                            toast.success(`Wetter manuell geändert! ${condition.emoji}`, {
-                              description: `${condition.name}: ${condition.description}`,
-                              duration: 3000,
-                            })
-                          }}
-                        >
-                          <div className="text-xl mb-1">{condition.emoji}</div>
-                          <div className="text-xs font-medium mb-1">{condition.name}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {condition.duration}h
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-2 text-center">
-                      💡 Klicke auf ein Wetter-Symbol!
-                    </p>
-                  </CardContent>
-                </Card>
-
-                {/* Garden Care */}
-                <Card>
-                  <CardHeader className="pb-4">
-                    <CardTitle className="flex items-center justify-between text-lg">
-                      <span className="flex items-center gap-2">
-                        💧 Garten gießen
-                      </span>
-                      <Button
-                        onClick={waterGarden}
-                        disabled={lastWateringDate === new Date().toISOString().split('T')[0]}
-                        variant={lastWateringDate === new Date().toISOString().split('T')[0] ? "secondary" : "default"}
-                        size="sm"
-                      >
-                        {lastWateringDate === new Date().toISOString().split('T')[0] ? '✓ Gegossen' : '💧 Gießen'}
-                      </Button>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-xs text-muted-foreground text-center">
-                      Gieße täglich für Bonus-Punkte! ({Math.floor((plantedFlowers || []).length * 0.5)} Punkte heute)
-                    </p>
-                  </CardContent>
-                </Card>
-
-                {/* Achievements - Compact */}
-                <Card>
-                  <CardHeader className="pb-4">
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      🏆 Achievements
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      {(achievements || []).map(achievement => (
-                        <div
-                          key={achievement.id}
-                          className={`p-2 border rounded-lg flex items-center gap-2 ${
-                            achievement.unlocked 
-                              ? 'bg-secondary/20 border-secondary' 
-                              : 'bg-muted/30'
-                          }`}
-                        >
-                          <div className="text-lg">{achievement.emoji}</div>
-                          <div className="flex-1 min-w-0">
-                            <p className={`text-sm font-medium truncate ${achievement.unlocked ? 'text-secondary' : 'text-foreground'}`}>
-                              {achievement.name}
-                            </p>
-                            <p className="text-xs text-muted-foreground truncate">{achievement.description}</p>
-                          </div>
-                          <Badge variant={achievement.unlocked ? "secondary" : "outline"} className="text-xs">
-                            +{achievement.reward}
-                          </Badge>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Garden Shop */}
-                <Card>
-                  <CardHeader className="pb-4">
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <ShoppingCart className="w-5 h-5" />
-                      Garten-Shop
-                    </CardTitle>
-                    <p className="text-xs text-muted-foreground">
-                      🌸 Blumen • 🍎 Obst • 🥕 Gemüse • 🌿 Kräuter & mehr
-                    </p>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-2 gap-2">
-                      {flowers.map(flower => (
-                        <div
-                          key={flower.id}
-                          className="flex flex-col items-center p-2 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
-                          draggable
-                          onDragStart={() => handleDragStart(flower)}
-                        >
-                          <div className={`mb-1 ${flower.size === 'large' ? 'text-2xl' : flower.size === 'medium' ? 'text-xl' : 'text-lg'}`}>
-                            {flower.emoji}
-                          </div>
-                          <span className="text-xs font-medium text-center mb-1 leading-tight">{flower.name}</span>
-                          <Badge className={`text-xs mb-1 ${getRarityBadge(flower.rarity)}`}>
-                            {flower.rarity}
-                          </Badge>
-                          <div className="text-xs text-muted-foreground mb-1 text-center">
-                            🕒 {flower.growthTime}h | ⚡ {flower.pointsPerHour}/h
-                          </div>
-                          <Badge 
-                            variant={totalPoints && totalPoints >= flower.cost ? "default" : "secondary"}
-                            className="mb-1 text-xs"
-                          >
-                            {flower.cost} P
-                          </Badge>
-                          <Button
-                            size="sm"
-                            onClick={() => buyPlant(flower)}
-                            disabled={!totalPoints || totalPoints < flower.cost}
-                            className="w-full text-xs py-1 h-5"
-                          >
-                            Kaufen
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-3 text-center">
-                      💡 Ziehe Pflanzen per Drag & Drop in deinen Garten! 🌟 Seltene Sorten haben bessere Boni
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Right Column - Fixed Garden View */}
-              <div className="lg:sticky lg:top-0">
+              {/* Left Column - Fixed Garden View */}
+              <div className="lg:order-2">
                 <Card className="h-full">
                   <CardHeader className="pb-4">
                     <div className="flex items-center justify-between">
@@ -1877,6 +1666,218 @@ function App() {
                   </CardContent>
                 </Card>
               </div>
+              
+              {/* Right Column - Scrollable Shop & Controls */}
+              <div className="space-y-4 overflow-y-auto pr-2 lg:order-1" style={{ maxHeight: '900px' }}>
+                
+                {/* Garden Stats */}
+                <div className="grid grid-cols-1 gap-4">
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="flex items-center space-x-2">
+                        <Flower className="w-5 h-5 text-primary" />
+                        <div>
+                          <p className="text-xl font-bold">{(plantedFlowers || []).length}</p>
+                          <p className="text-xs text-muted-foreground">Gepflanzte Pflanzen</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="flex items-center space-x-2">
+                        <Trophy className="w-5 h-5 text-accent" />
+                        <div>
+                          <p className="text-xl font-bold">{getGardenStats().totalValue}</p>
+                          <p className="text-xs text-muted-foreground">Gartenwert</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="flex items-center space-x-2">
+                        <TrendUp className="w-5 h-5 text-secondary" />
+                        <div>
+                          <p className="text-xl font-bold flex items-center gap-1">
+                            {getGardenStats().passiveIncome.toFixed(1)}/h
+                            {normalizedCurrentWeather && new Date() < normalizedCurrentWeather.endTime && normalizedCurrentWeather.condition.pointsMultiplier !== 1.0 && (
+                              <span className={`text-xs ${normalizedCurrentWeather.condition.pointsMultiplier > 1 ? 'text-green-600' : 'text-red-600'}`}>
+                                {normalizedCurrentWeather.condition.emoji}
+                              </span>
+                            )}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Passive Punkte
+                            {normalizedCurrentWeather && new Date() < normalizedCurrentWeather.endTime && normalizedCurrentWeather.condition.pointsMultiplier !== 1.0 && (
+                              <span className={`ml-1 ${normalizedCurrentWeather.condition.pointsMultiplier > 1 ? 'text-green-600' : 'text-red-600'}`}>
+                                ({normalizedCurrentWeather.condition.pointsMultiplier > 1 ? '+' : ''}
+                                {((normalizedCurrentWeather.condition.pointsMultiplier - 1) * 100).toFixed(0)}%)
+                              </span>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Weather Forecast - Compact */}
+                <Card>
+                  <CardHeader className="pb-4">
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      🌤️ Wettervorhersage
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-3 gap-2">
+                      {weatherConditions.slice(0, 6).map((condition, index) => (
+                        <div 
+                          key={condition.id}
+                          className={`text-center p-2 rounded border transition-all cursor-pointer hover:bg-muted/50 ${
+                            normalizedCurrentWeather?.condition.id === condition.id ? 'border-accent bg-accent/20' : 'border-muted'
+                          }`}
+                          onClick={() => {
+                            const newWeather: CurrentWeather = {
+                              condition,
+                              startTime: new Date(),
+                              endTime: new Date(Date.now() + condition.duration * 60 * 60 * 1000)
+                            }
+                            setCurrentWeather(newWeather)
+                            toast.success(`Wetter manuell geändert! ${condition.emoji}`, {
+                              description: `${condition.name}: ${condition.description}`,
+                              duration: 3000,
+                            })
+                          }}
+                        >
+                          <div className="text-xl mb-1">{condition.emoji}</div>
+                          <div className="text-xs font-medium mb-1">{condition.name}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {condition.duration}h
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2 text-center">
+                      💡 Klicke auf ein Wetter-Symbol!
+                    </p>
+                  </CardContent>
+                </Card>
+
+                {/* Garden Care */}
+                <Card>
+                  <CardHeader className="pb-4">
+                    <CardTitle className="flex items-center justify-between text-lg">
+                      <span className="flex items-center gap-2">
+                        💧 Garten gießen
+                      </span>
+                      <Button
+                        onClick={waterGarden}
+                        disabled={lastWateringDate === new Date().toISOString().split('T')[0]}
+                        variant={lastWateringDate === new Date().toISOString().split('T')[0] ? "secondary" : "default"}
+                        size="sm"
+                      >
+                        {lastWateringDate === new Date().toISOString().split('T')[0] ? '✓ Gegossen' : '💧 Gießen'}
+                      </Button>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-xs text-muted-foreground text-center">
+                      Gieße täglich für Bonus-Punkte! ({Math.floor((plantedFlowers || []).length * 0.5)} Punkte heute)
+                    </p>
+                  </CardContent>
+                </Card>
+
+                {/* Achievements - Compact */}
+                <Card>
+                  <CardHeader className="pb-4">
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      🏆 Achievements
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {(achievements || []).map(achievement => (
+                        <div
+                          key={achievement.id}
+                          className={`p-2 border rounded-lg flex items-center gap-2 ${
+                            achievement.unlocked 
+                              ? 'bg-secondary/20 border-secondary' 
+                              : 'bg-muted/30'
+                          }`}
+                        >
+                          <div className="text-lg">{achievement.emoji}</div>
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-sm font-medium truncate ${achievement.unlocked ? 'text-secondary' : 'text-foreground'}`}>
+                              {achievement.name}
+                            </p>
+                            <p className="text-xs text-muted-foreground truncate">{achievement.description}</p>
+                          </div>
+                          <Badge variant={achievement.unlocked ? "secondary" : "outline"} className="text-xs">
+                            +{achievement.reward}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Garden Shop */}
+                <Card>
+                  <CardHeader className="pb-4">
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <ShoppingCart className="w-5 h-5" />
+                      Garten-Shop
+                    </CardTitle>
+                    <p className="text-xs text-muted-foreground">
+                      🌸 Blumen • 🍎 Obst • 🥕 Gemüse • 🌿 Kräuter & mehr
+                    </p>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {flowers.map(flower => (
+                        <div
+                          key={flower.id}
+                          className="flex flex-col items-center p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                          draggable
+                          onDragStart={() => handleDragStart(flower)}
+                        >
+                          <div className={`mb-2 ${flower.size === 'large' ? 'text-3xl' : flower.size === 'medium' ? 'text-2xl' : 'text-xl'}`}>
+                            {flower.emoji}
+                          </div>
+                          <span className="text-sm font-medium text-center mb-2 leading-tight">{flower.name}</span>
+                          <Badge className={`text-xs mb-2 ${getRarityBadge(flower.rarity)}`}>
+                            {flower.rarity}
+                          </Badge>
+                          <div className="text-xs text-muted-foreground mb-2 text-center">
+                            🕒 {flower.growthTime}h | ⚡ {flower.pointsPerHour}/h
+                          </div>
+                          <Badge 
+                            variant={totalPoints && totalPoints >= flower.cost ? "default" : "secondary"}
+                            className="mb-2 text-xs"
+                          >
+                            {flower.cost} P
+                          </Badge>
+                          <Button
+                            size="sm"
+                            onClick={() => buyPlant(flower)}
+                            disabled={!totalPoints || totalPoints < flower.cost}
+                            className="w-full text-xs py-2 h-auto"
+                          >
+                            Kaufen
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-4 text-center">
+                      💡 Ziehe Pflanzen per Drag & Drop in deinen Garten! 🌟 Seltene Sorten haben bessere Boni
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+
             </div>
           </TabsContent>
 
