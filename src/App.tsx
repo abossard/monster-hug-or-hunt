@@ -12,8 +12,8 @@ interface Monster {
   emoji: string
 }
 
-const CUTE_MONSTERS = ['👼', '🧚', '🧙‍♀️', '🦄', '🐉', '👻', '🧞‍♂️', '🤖']
-const UGLY_MONSTERS = ['👹', '👺', '🧟‍♂️', '🧛‍♂️', '🦹‍♂️', '💀', '🔥', '⚡']
+const CUTE_MONSTERS = ['🥰', '😇', '🤗', '😊', '🥳', '😍', '🤩', '😘']
+const UGLY_MONSTERS = ['👹', '👺', '💀', '☠️', '🧟', '🧛', '😈', '👿']
 
 const GAME_DURATION = 2000 // 2 seconds
 
@@ -24,6 +24,7 @@ function App() {
   const [gameState, setGameState] = useState<'waiting' | 'playing' | 'gameOver'>('waiting')
   const [timeLeft, setTimeLeft] = useState(GAME_DURATION)
   const [isAnimating, setIsAnimating] = useState(false)
+  const [lastDecision, setLastDecision] = useState<'correct' | 'wrong' | null>(null)
   
   const gameTimerRef = useRef<NodeJS.Timeout>()
   const progressTimerRef = useRef<NodeJS.Timeout>()
@@ -33,11 +34,14 @@ function App() {
     const monsterList = isCute ? CUTE_MONSTERS : UGLY_MONSTERS
     const emoji = monsterList[Math.floor(Math.random() * monsterList.length)]
     
-    return {
+    const monster = {
       id: Date.now(),
       type: isCute ? 'cute' : 'ugly',
       emoji
     }
+    
+    console.log('Generated monster:', monster)
+    return monster
   }
 
   const startGame = () => {
@@ -49,6 +53,7 @@ function App() {
   const spawnNextMonster = () => {
     setIsAnimating(true)
     setCurrentMonster(null)
+    setLastDecision(null)
     
     setTimeout(() => {
       const monster = generateMonster()
@@ -86,19 +91,33 @@ function App() {
     clearTimeout(gameTimerRef.current!)
     clearInterval(progressTimerRef.current!)
 
-    const correct = 
+    // Clear any previous decision feedback
+    setLastDecision(null)
+
+    // Check if decision is correct
+    const isCorrect = 
       (decision === 'hug' && currentMonster.type === 'cute') ||
       (decision === 'kill' && currentMonster.type === 'ugly')
 
-    if (correct) {
+    console.log('Decision:', decision, 'Monster type:', currentMonster.type, 'Correct:', isCorrect)
+
+    if (isCorrect) {
+      setLastDecision('correct')
       const newScore = score + 1
       setScore(newScore)
       if (newScore > highScore) {
         setHighScore(newScore)
       }
-      spawnNextMonster()
+      // Short delay to show feedback before next monster
+      setTimeout(() => {
+        spawnNextMonster()
+      }, 500)
     } else {
-      gameOver()
+      setLastDecision('wrong')
+      // Short delay to show feedback before game over
+      setTimeout(() => {
+        gameOver()
+      }, 1000)
     }
   }
 
@@ -171,8 +190,8 @@ function App() {
               </div>
             </div>
 
-            <div className="monster-display h-32 flex items-center justify-center">
-              {currentMonster && (
+            <div className="monster-display h-32 flex flex-col items-center justify-center">
+              {currentMonster && !lastDecision && (
                 <div 
                   key={currentMonster.id}
                   className={`text-8xl ${isAnimating ? 'monster-exit' : 'monster-enter'}`}
@@ -180,12 +199,19 @@ function App() {
                   {currentMonster.emoji}
                 </div>
               )}
+              {lastDecision && (
+                <div className={`text-4xl font-bold ${
+                  lastDecision === 'correct' ? 'text-accent' : 'text-destructive'
+                }`}>
+                  {lastDecision === 'correct' ? '✅ CORRECT!' : '❌ WRONG!'}
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <Button
                 onClick={() => makeDecision('hug')}
-                disabled={!currentMonster}
+                disabled={!currentMonster || lastDecision !== null}
                 className="h-16 text-lg font-semibold bg-secondary hover:bg-secondary/80 text-secondary-foreground"
               >
                 <Heart className="w-6 h-6 mr-2" />
@@ -193,7 +219,7 @@ function App() {
               </Button>
               <Button
                 onClick={() => makeDecision('kill')}
-                disabled={!currentMonster}
+                disabled={!currentMonster || lastDecision !== null}
                 variant="destructive"
                 className="h-16 text-lg font-semibold"
               >
