@@ -53,6 +53,23 @@ interface StudySession {
   taskText?: string
 }
 
+interface WeatherCondition {
+  id: string
+  name: string
+  emoji: string
+  growthMultiplier: number
+  pointsMultiplier: number
+  duration: number // hours
+  description: string
+  rarity: 'common' | 'rare' | 'epic'
+}
+
+interface CurrentWeather {
+  condition: WeatherCondition
+  startTime: Date
+  endTime: Date
+}
+
 interface GardenAchievement {
   id: string
   name: string
@@ -334,11 +351,130 @@ const breakMessages = [
   "Auszeit! Lass dein Wissen sacken ✨"
 ]
 
+const weatherConditions: WeatherCondition[] = [
+  {
+    id: 'sunny',
+    name: 'Sonnenschein',
+    emoji: '☀️',
+    growthMultiplier: 1.5,
+    pointsMultiplier: 1.2,
+    duration: 8,
+    description: 'Perfektes Wetter für Pflanzenwachstum!',
+    rarity: 'common'
+  },
+  {
+    id: 'cloudy',
+    name: 'Bewölkt',
+    emoji: '☁️',
+    growthMultiplier: 1.0,
+    pointsMultiplier: 1.0,
+    duration: 6,
+    description: 'Normales Wachstum bei bewölktem Himmel.',
+    rarity: 'common'
+  },
+  {
+    id: 'rainy',
+    name: 'Regnerisch',
+    emoji: '🌧️',
+    growthMultiplier: 1.8,
+    pointsMultiplier: 1.4,
+    duration: 4,
+    description: 'Regen beschleunigt das Wachstum erheblich!',
+    rarity: 'rare'
+  },
+  {
+    id: 'storm',
+    name: 'Gewitter',
+    emoji: '⛈️',
+    growthMultiplier: 0.5,
+    pointsMultiplier: 0.8,
+    duration: 2,
+    description: 'Sturm verlangsamt das Wachstum.',
+    rarity: 'common'
+  },
+  {
+    id: 'rainbow',
+    name: 'Regenbogen',
+    emoji: '🌈',
+    growthMultiplier: 2.5,
+    pointsMultiplier: 2.0,
+    duration: 1,
+    description: 'Magisches Wetter! Extremer Wachstumsbonus!',
+    rarity: 'epic'
+  },
+  {
+    id: 'snow',
+    name: 'Schnee',
+    emoji: '❄️',
+    growthMultiplier: 0.3,
+    pointsMultiplier: 0.7,
+    duration: 12,
+    description: 'Winterwetter verlangsamt das Wachstum stark.',
+    rarity: 'rare'
+  },
+  {
+    id: 'fog',
+    name: 'Nebel',
+    emoji: '🌫️',
+    growthMultiplier: 0.8,
+    pointsMultiplier: 0.9,
+    duration: 4,
+    description: 'Nebel reduziert das Wachstum leicht.',
+    rarity: 'common'
+  },
+  {
+    id: 'windy',
+    name: 'Windig',
+    emoji: '💨',
+    growthMultiplier: 1.2,
+    pointsMultiplier: 1.1,
+    duration: 6,
+    description: 'Wind hilft bei der Bestäubung!',
+    rarity: 'common'
+  },
+  {
+    id: 'aurora',
+    name: 'Polarlicht',
+    emoji: '🌌',
+    growthMultiplier: 3.0,
+    pointsMultiplier: 2.5,
+    duration: 3,
+    description: 'Mystisches Polarlicht verstärkt magische Energien!',
+    rarity: 'epic'
+  }
+]
+
 // Helper function to format time in mm:ss format
 const formatTime = (seconds: number): string => {
   const minutes = Math.floor(seconds / 60)
   const remainingSeconds = seconds % 60
   return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`
+}
+
+// Helper function to get weather-based visual filter
+const getWeatherFilter = (weatherId: string): string => {
+  switch (weatherId) {
+    case 'sunny':
+      return 'brightness(1.2) contrast(1.1)'
+    case 'cloudy':
+      return 'brightness(0.9) contrast(0.9)'
+    case 'rainy':
+      return 'brightness(0.8) saturate(1.2) hue-rotate(10deg)'
+    case 'storm':
+      return 'brightness(0.6) contrast(1.3) saturate(0.8)'
+    case 'rainbow':
+      return 'brightness(1.3) saturate(1.5) contrast(1.2)'
+    case 'snow':
+      return 'brightness(1.1) saturate(0.7) hue-rotate(-10deg)'
+    case 'fog':
+      return 'brightness(0.7) contrast(0.8) blur(1px)'
+    case 'windy':
+      return 'brightness(1.1) contrast(1.1)'
+    case 'aurora':
+      return 'brightness(1.2) saturate(1.4) hue-rotate(90deg)'
+    default:
+      return 'none'
+  }
 }
 
 function App() {
@@ -350,6 +486,7 @@ function App() {
   const [studySessions, setStudySessions] = useKV<StudySession[]>('study-sessions', [])
   const [achievements, setAchievements] = useKV<GardenAchievement[]>('garden-achievements', gardenAchievements)
   const [lastWateringDate, setLastWateringDate] = useKV<string>('last-watering-date', '')
+  const [currentWeather, setCurrentWeather] = useKV<CurrentWeather | null>('current-weather', null)
   const [draggedFlower, setDraggedFlower] = useState<Flower | null>(null)
   
   // Gardener state
@@ -364,7 +501,50 @@ function App() {
   const timerRef = useRef<NodeJS.Timeout | null>(null)
   const audioContextRef = useRef<AudioContext | null>(null)
 
-  // Gardener animation effect
+  // Weather system
+  const generateRandomWeather = (): CurrentWeather => {
+    const rarityRoll = Math.random()
+    let availableWeather: WeatherCondition[]
+    
+    if (rarityRoll < 0.05) { // 5% chance for epic weather
+      availableWeather = weatherConditions.filter(w => w.rarity === 'epic')
+    } else if (rarityRoll < 0.25) { // 20% chance for rare weather
+      availableWeather = weatherConditions.filter(w => w.rarity === 'rare')
+    } else { // 75% chance for common weather
+      availableWeather = weatherConditions.filter(w => w.rarity === 'common')
+    }
+    
+    const randomCondition = availableWeather[Math.floor(Math.random() * availableWeather.length)]
+    const startTime = new Date()
+    const endTime = new Date(startTime.getTime() + randomCondition.duration * 60 * 60 * 1000)
+    
+    return {
+      condition: randomCondition,
+      startTime,
+      endTime
+    }
+  }
+
+  const updateWeather = () => {
+    const now = new Date()
+    
+    if (!currentWeather || now >= currentWeather.endTime) {
+      const newWeather = generateRandomWeather()
+      setCurrentWeather(newWeather)
+      
+      toast.success(`Wetteränderung! ${newWeather.condition.emoji}`, {
+        description: `${newWeather.condition.name}: ${newWeather.condition.description}`,
+        duration: 4000,
+      })
+    }
+  }
+
+  // Check weather updates every 30 seconds
+  useEffect(() => {
+    updateWeather() // Initial weather check
+    const interval = setInterval(updateWeather, 30000)
+    return () => clearInterval(interval)
+  }, [currentWeather])
   useEffect(() => {
     const interval = setInterval(() => {
       setGardenerPosition(prev => {
@@ -420,7 +600,7 @@ function App() {
       
       // Award points for study time
       if (pointsEarned > 0) {
-        setTotalPoints(current => current + pointsEarned)
+        setTotalPoints(current => (current || 0) + pointsEarned)
       }
       
       // Record study session
@@ -431,7 +611,7 @@ function App() {
         points: pointsEarned,
         type: 'timer'
       }
-      setStudySessions(current => [...current, newSession])
+      setStudySessions(current => [...(current || []), newSession])
       
       playNotificationSound()
       const randomBreakMessage = breakMessages[Math.floor(Math.random() * breakMessages.length)]
@@ -496,7 +676,7 @@ function App() {
       const pointsEarned = Math.floor((studiedMinutes / 60) * 10) // 10 points per hour
       
       if (pointsEarned > 0) {
-        setTotalPoints(current => current + pointsEarned)
+        setTotalPoints(current => (current || 0) + pointsEarned)
         
         // Record partial study session
         const newSession: StudySession = {
@@ -506,7 +686,7 @@ function App() {
           points: pointsEarned,
           type: 'timer'
         }
-        setStudySessions(current => [...current, newSession])
+        setStudySessions(current => [...(current || []), newSession])
         
         toast.success(`Lernsession beendet! 📚`, {
           description: `Du hast ${studiedMinutes} Minuten gelernt und ${pointsEarned} Punkte erhalten!`,
@@ -520,23 +700,33 @@ function App() {
     setTimeLeft(0)
   }
 
-  // Passive point generation from garden
+  // Passive point generation from garden with weather effects
   useEffect(() => {
     const interval = setInterval(() => {
       let passivePoints = 0
       const now = new Date()
       
+      // Get current weather multiplier
+      const weatherMultiplier = currentWeather && now < currentWeather.endTime 
+        ? currentWeather.condition.pointsMultiplier 
+        : 1.0
+      
       setPlantedFlowers(currentFlowers => {
+        if (!currentFlowers) return []
         return currentFlowers.map(plantedFlower => {
           const flower = flowers.find(f => f.id === plantedFlower.flowerId)
           if (!flower) return plantedFlower
           
-          // Calculate growth over time
+          // Calculate growth over time with weather effects
           const hoursPlanted = (now.getTime() - plantedFlower.plantedAt.getTime()) / (1000 * 60 * 60)
-          const newGrowth = Math.min(100, (hoursPlanted / flower.growthTime) * 100)
+          const weatherGrowthMultiplier = currentWeather && now < currentWeather.endTime 
+            ? currentWeather.condition.growthMultiplier 
+            : 1.0
+          const adjustedGrowthTime = flower.growthTime / weatherGrowthMultiplier
+          const newGrowth = Math.min(100, (hoursPlanted / adjustedGrowthTime) * 100)
           
           // Calculate combo bonus
-          const nearbyFlowers = currentFlowers.filter(other => {
+          const nearbyFlowers = (currentFlowers || []).filter(other => {
             if (other.id === plantedFlower.id) return false
             const distance = Math.sqrt(
               Math.pow(other.x - plantedFlower.x, 2) + Math.pow(other.y - plantedFlower.y, 2)
@@ -554,10 +744,10 @@ function App() {
             })
           }
           
-          // Generate passive points if fully grown
+          // Generate passive points if fully grown with weather bonus
           if (newGrowth >= 100) {
             const basePoints = flower.pointsPerHour / 60 // per minute
-            const totalPoints = basePoints * (1 + comboBonus)
+            const totalPoints = basePoints * (1 + comboBonus) * weatherMultiplier
             passivePoints += totalPoints
           }
           
@@ -571,12 +761,12 @@ function App() {
       
       // Award passive points
       if (passivePoints > 0.1) { // Only award if significant
-        setTotalPoints(current => current + Math.floor(passivePoints * 10) / 10)
+        setTotalPoints(current => (current || 0) + Math.floor(passivePoints * 10) / 10)
       }
     }, 60000) // Every minute
     
     return () => clearInterval(interval)
-  }, [setPlantedFlowers, setTotalPoints])
+  }, [setPlantedFlowers, setTotalPoints, currentWeather])
 
   const waterGarden = () => {
     const today = new Date().toISOString().split('T')[0]
@@ -586,8 +776,8 @@ function App() {
     }
     
     setLastWateringDate(today)
-    const wateringBonus = Math.floor(plantedFlowers.length * 0.5)
-    setTotalPoints(current => current + wateringBonus)
+    const wateringBonus = Math.floor((plantedFlowers || []).length * 0.5)
+    setTotalPoints(current => (current || 0) + wateringBonus)
     
     toast.success('Garten gegossen! 🌿', {
       description: `+${wateringBonus} Punkte für die Pflege deines Gartens!`,
@@ -597,6 +787,7 @@ function App() {
 
   const checkAchievements = () => {
     setAchievements(currentAchievements => {
+      if (!currentAchievements) return gardenAchievements // fallback to default
       return currentAchievements.map(achievement => {
         if (achievement.unlocked) return achievement
         
@@ -604,21 +795,21 @@ function App() {
         
         switch (achievement.requirement.type) {
           case 'flowers_planted':
-            shouldUnlock = plantedFlowers.length >= achievement.requirement.count
+            shouldUnlock = (plantedFlowers || []).length >= achievement.requirement.count
             break
           case 'rare_flowers':
-            const rareCount = plantedFlowers.filter(pf => {
+            const rareCount = (plantedFlowers || []).filter(pf => {
               const flower = flowers.find(f => f.id === pf.flowerId)
               return flower && ['rare', 'epic', 'legendary'].includes(flower.rarity)
             }).length
             shouldUnlock = rareCount >= achievement.requirement.count
             break
           case 'combo_bonus':
-            const combos = plantedFlowers.filter(pf => pf.healthBonus > 0).length
+            const combos = (plantedFlowers || []).filter(pf => pf.healthBonus > 0).length
             shouldUnlock = combos >= achievement.requirement.count
             break
           case 'garden_value':
-            const gardenValue = plantedFlowers.reduce((sum, pf) => {
+            const gardenValue = (plantedFlowers || []).reduce((sum, pf) => {
               const flower = flowers.find(f => f.id === pf.flowerId)
               return sum + (flower ? flower.cost : 0)
             }, 0)
@@ -627,7 +818,7 @@ function App() {
         }
         
         if (shouldUnlock) {
-          setTotalPoints(current => current + achievement.reward)
+          setTotalPoints(current => (current || 0) + achievement.reward)
           toast.success(`Achievement erhalten! ${achievement.emoji}`, {
             description: `${achievement.name}: +${achievement.reward} Punkte!`,
             duration: 4000,
@@ -656,17 +847,18 @@ function App() {
       createdAt: new Date()
     }
 
-    setTodos(currentTodos => [...currentTodos, newTodo])
+    setTodos(currentTodos => [...(currentTodos || []), newTodo])
     setNewTodoText('')
     setNewTodoPoints('1')
   }
 
   const completeTodo = (todoId: number) => {
     setTodos(currentTodos => {
+      if (!currentTodos) return []
       const updatedTodos = currentTodos.map(todo => {
         if (todo.id === todoId && !todo.completed) {
           // Add points when completing the task
-          setTotalPoints(currentPoints => currentPoints + todo.points)
+          setTotalPoints(currentPoints => (currentPoints || 0) + todo.points)
           
           // Record task completion session
           const newSession: StudySession = {
@@ -677,7 +869,7 @@ function App() {
             type: 'task',
             taskText: todo.text
           }
-          setStudySessions(current => [...current, newSession])
+          setStudySessions(current => [...(current || []), newSession])
           
           // Show motivational message
           const randomMessage = motivationalMessages[Math.floor(Math.random() * motivationalMessages.length)]
@@ -695,19 +887,19 @@ function App() {
   }
 
   const deleteTodo = (todoId: number) => {
-    setTodos(currentTodos => currentTodos.filter(todo => todo.id !== todoId))
+    setTodos(currentTodos => (currentTodos || []).filter(todo => todo.id !== todoId))
   }
 
   const buyPlant = (plant: Flower) => {
-    if (totalPoints >= plant.cost) {
-      setTotalPoints(current => current - plant.cost)
+    if ((totalPoints || 0) >= plant.cost) {
+      setTotalPoints(current => (current || 0) - plant.cost)
       toast.success(`${plant.name} gekauft! 🌱`, {
         description: `Du kannst es jetzt in deinen Garten pflanzen!`,
         duration: 3000,
       })
     } else {
       toast.error('Nicht genug Punkte!', {
-        description: `Du brauchst ${plant.cost - totalPoints} weitere Punkte.`,
+        description: `Du brauchst ${plant.cost - (totalPoints || 0)} weitere Punkte.`,
         duration: 3000,
       })
     }
@@ -721,7 +913,7 @@ function App() {
     e.preventDefault()
     if (!draggedFlower) return
 
-    if (totalPoints < draggedFlower.cost) {
+    if ((totalPoints || 0) < draggedFlower.cost) {
       toast.error('Nicht genug Punkte für diese Pflanze!')
       setDraggedFlower(null)
       return
@@ -745,8 +937,8 @@ function App() {
       healthBonus: 0
     }
 
-    setPlantedFlowers(current => [...current, newPlantedFlower])
-    setTotalPoints(current => current - draggedFlower.cost)
+    setPlantedFlowers(current => [...(current || []), newPlantedFlower])
+    setTotalPoints(current => (current || 0) - draggedFlower.cost)
     setDraggedFlower(null)
 
     toast.success(`${draggedFlower.name} gepflanzt! 🌱`, {
@@ -760,7 +952,7 @@ function App() {
   }
 
   const removeFlowerFromGarden = (plantedFlowerId: string) => {
-    setPlantedFlowers(current => current.filter(flower => flower.id !== plantedFlowerId))
+    setPlantedFlowers(current => (current || []).filter(flower => flower.id !== plantedFlowerId))
   }
 
   const resetGarden = () => {
@@ -789,7 +981,7 @@ function App() {
     }
     
     // Add data from study sessions
-    studySessions.forEach(session => {
+    ;(studySessions || []).forEach(session => {
       if (stats[session.date]) {
         stats[session.date].pointsEarned += session.points
         if (session.type === 'timer') {
@@ -844,8 +1036,8 @@ function App() {
   }
 
   const getActivityDistribution = () => {
-    const timerSessions = studySessions.filter(s => s.type === 'timer').length
-    const taskSessions = studySessions.filter(s => s.type === 'task').length
+    const timerSessions = (studySessions || []).filter(s => s.type === 'timer').length
+    const taskSessions = (studySessions || []).filter(s => s.type === 'task').length
     
     return [
       { name: 'Timer Sessions', value: timerSessions, color: '#8b5cf6' },
@@ -874,22 +1066,28 @@ function App() {
   }
 
   const getGardenStats = () => {
-    const totalValue = plantedFlowers.reduce((sum, pf) => {
+    const totalValue = (plantedFlowers || []).reduce((sum, pf) => {
       const flower = flowers.find(f => f.id === pf.flowerId)
       return sum + (flower ? flower.cost : 0)
     }, 0)
     
-    const passiveIncome = plantedFlowers.reduce((sum, pf) => {
+    // Calculate passive income with current weather effects
+    const now = new Date()
+    const weatherMultiplier = currentWeather && now < currentWeather.endTime 
+      ? currentWeather.condition.pointsMultiplier 
+      : 1.0
+    
+    const passiveIncome = (plantedFlowers || []).reduce((sum, pf) => {
       const flower = flowers.find(f => f.id === pf.flowerId)
       if (!flower || pf.growth < 100) return sum
-      return sum + flower.pointsPerHour * (1 + pf.healthBonus)
+      return sum + flower.pointsPerHour * (1 + pf.healthBonus) * weatherMultiplier
     }, 0)
     
     return { totalValue, passiveIncome }
   }
 
-  const pendingTodos = todos.filter(todo => !todo.completed)
-  const completedTodos = todos.filter(todo => todo.completed)
+  const pendingTodos = (todos || []).filter(todo => !todo.completed)
+  const completedTodos = (todos || []).filter(todo => todo.completed)
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
@@ -916,7 +1114,7 @@ function App() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-center gap-3 mb-2">
               <Trophy className="w-8 h-8 text-accent" />
-              <span className="text-3xl font-bold text-primary">{totalPoints}</span>
+              <span className="text-3xl font-bold text-primary">{totalPoints || 0}</span>
               <span className="text-xl text-muted-foreground">Punkte</span>
             </div>
             <p className="text-sm text-muted-foreground">
@@ -1149,7 +1347,7 @@ function App() {
             )}
 
             {/* Empty State */}
-            {todos.length === 0 && (
+            {(todos || []).length === 0 && (
               <Card>
                 <CardContent className="py-12 text-center space-y-4">
                   <Target className="w-16 h-16 text-muted-foreground mx-auto" />
@@ -1166,14 +1364,85 @@ function App() {
 
           {/* Garden Tab */}
           <TabsContent value="garden" className="space-y-6">
-            {/* Garden Stats */}
+            {/* Current Weather Display */}
+            {currentWeather && (
+              <Card className="border-2 border-accent/50 bg-accent/10">
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span className="flex items-center gap-2">
+                      <span className="text-2xl">{currentWeather.condition.emoji}</span>
+                      <span>Aktuelles Wetter: {currentWeather.condition.name}</span>
+                    </span>
+                    <div className="text-right text-sm">
+                      <div className="text-muted-foreground">
+                        Noch {Math.ceil((currentWeather.endTime.getTime() - new Date().getTime()) / (1000 * 60 * 60))}h
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const newWeather = generateRandomWeather()
+                          setCurrentWeather(newWeather)
+                          toast.success(`Wetter geändert! ${newWeather.condition.emoji}`, {
+                            description: `${newWeather.condition.name}: ${newWeather.condition.description}`,
+                            duration: 3000,
+                          })
+                        }}
+                        className="mt-1"
+                      >
+                        🔄 Wetter ändern
+                      </Button>
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="text-center">
+                      <p className="text-sm text-muted-foreground">Beschreibung</p>
+                      <p className="font-medium">{currentWeather.condition.description}</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm text-muted-foreground">Wachstums-Effekt</p>
+                      <p className={`font-bold ${currentWeather.condition.growthMultiplier > 1 ? 'text-green-600' : currentWeather.condition.growthMultiplier < 1 ? 'text-red-600' : 'text-gray-600'}`}>
+                        {currentWeather.condition.growthMultiplier > 1 ? '+' : ''}
+                        {((currentWeather.condition.growthMultiplier - 1) * 100).toFixed(0)}%
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm text-muted-foreground">Punkte-Effekt</p>
+                      <p className={`font-bold ${currentWeather.condition.pointsMultiplier > 1 ? 'text-green-600' : currentWeather.condition.pointsMultiplier < 1 ? 'text-red-600' : 'text-gray-600'}`}>
+                        {currentWeather.condition.pointsMultiplier > 1 ? '+' : ''}
+                        {((currentWeather.condition.pointsMultiplier - 1) * 100).toFixed(0)}%
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* Weather Rarity Indicator */}
+                  <div className="mt-4 flex items-center justify-center">
+                    <Badge 
+                      variant="outline" 
+                      className={`${
+                        currentWeather.condition.rarity === 'epic' ? 'border-purple-500 text-purple-600' :
+                        currentWeather.condition.rarity === 'rare' ? 'border-blue-500 text-blue-600' :
+                        'border-gray-500 text-gray-600'
+                      }`}
+                    >
+                      {currentWeather.condition.rarity === 'epic' ? '⭐ Episch' :
+                       currentWeather.condition.rarity === 'rare' ? '💎 Selten' :
+                       '🌿 Normal'}
+                    </Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            {/* Garden Stats with Weather Effects */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Card>
                 <CardContent className="pt-6">
                   <div className="flex items-center space-x-2">
                     <Flower className="w-5 h-5 text-primary" />
                     <div>
-                      <p className="text-2xl font-bold">{plantedFlowers.length}</p>
+                      <p className="text-2xl font-bold">{(plantedFlowers || []).length}</p>
                       <p className="text-xs text-muted-foreground">Gepflanzte Pflanzen</p>
                     </div>
                   </div>
@@ -1197,15 +1466,81 @@ function App() {
                   <div className="flex items-center space-x-2">
                     <TrendUp className="w-5 h-5 text-secondary" />
                     <div>
-                      <p className="text-2xl font-bold">{getGardenStats().passiveIncome.toFixed(1)}/h</p>
-                      <p className="text-xs text-muted-foreground">Passive Punkte</p>
+                      <p className="text-2xl font-bold flex items-center gap-1">
+                        {getGardenStats().passiveIncome.toFixed(1)}/h
+                        {currentWeather && new Date() < currentWeather.endTime && currentWeather.condition.pointsMultiplier !== 1.0 && (
+                          <span className={`text-xs ${currentWeather.condition.pointsMultiplier > 1 ? 'text-green-600' : 'text-red-600'}`}>
+                            {currentWeather.condition.emoji}
+                          </span>
+                        )}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Passive Punkte
+                        {currentWeather && new Date() < currentWeather.endTime && currentWeather.condition.pointsMultiplier !== 1.0 && (
+                          <span className={`ml-1 ${currentWeather.condition.pointsMultiplier > 1 ? 'text-green-600' : 'text-red-600'}`}>
+                            ({currentWeather.condition.pointsMultiplier > 1 ? '+' : ''}
+                            {((currentWeather.condition.pointsMultiplier - 1) * 100).toFixed(0)}%)
+                          </span>
+                        )}
+                      </p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Daily Garden Care */}
+            {/* Weather Forecast */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  🌤️ Wettervorhersage
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+                  {weatherConditions.slice(0, 6).map((condition, index) => (
+                    <div 
+                      key={condition.id}
+                      className={`text-center p-2 rounded border transition-all cursor-pointer hover:bg-muted/50 ${
+                        currentWeather?.condition.id === condition.id ? 'border-accent bg-accent/20' : 'border-muted'
+                      }`}
+                      onClick={() => {
+                        const newWeather: CurrentWeather = {
+                          condition,
+                          startTime: new Date(),
+                          endTime: new Date(Date.now() + condition.duration * 60 * 60 * 1000)
+                        }
+                        setCurrentWeather(newWeather)
+                        toast.success(`Wetter manuell geändert! ${condition.emoji}`, {
+                          description: `${condition.name}: ${condition.description}`,
+                          duration: 3000,
+                        })
+                      }}
+                    >
+                      <div className="text-2xl mb-1">{condition.emoji}</div>
+                      <div className="text-xs font-medium mb-1">{condition.name}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {condition.duration}h
+                      </div>
+                      <Badge 
+                        variant="outline" 
+                        className={`text-xs mt-1 ${
+                          condition.rarity === 'epic' ? 'border-purple-400 text-purple-600' :
+                          condition.rarity === 'rare' ? 'border-blue-400 text-blue-600' :
+                          'border-gray-400 text-gray-600'
+                        }`}
+                      >
+                        {condition.rarity === 'epic' ? '⭐' :
+                         condition.rarity === 'rare' ? '💎' : '🌿'}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-sm text-muted-foreground mt-3 text-center">
+                  💡 Klicke auf ein Wetter-Symbol, um es manuell zu aktivieren! • ⭐ Episch • 💎 Selten • 🌿 Normal
+                </p>
+              </CardContent>
+            </Card>
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
@@ -1222,8 +1557,8 @@ function App() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Gieße deinen Garten täglich für Bonus-Punkte! ({Math.floor(plantedFlowers.length * 0.5)} Punkte heute)
+                <p className="text-sm text-muted-foreground mt-3 text-center">
+                  Gieße deinen Garten täglich für Bonus-Punkte! ({Math.floor((plantedFlowers || []).length * 0.5)} Punkte heute)
                 </p>
               </CardContent>
             </Card>
@@ -1237,7 +1572,7 @@ function App() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {achievements.map(achievement => (
+                  {(achievements || []).map(achievement => (
                     <div
                       key={achievement.id}
                       className={`p-3 border rounded-lg flex items-center gap-3 ${
@@ -1293,7 +1628,7 @@ function App() {
                         🕒 {flower.growthTime}h | ⚡ {flower.pointsPerHour}/h
                       </div>
                       <Badge 
-                        variant={totalPoints >= flower.cost ? "default" : "secondary"}
+                        variant={totalPoints && totalPoints >= flower.cost ? "default" : "secondary"}
                         className="mb-1 text-xs"
                       >
                         {flower.cost} P
@@ -1301,7 +1636,7 @@ function App() {
                       <Button
                         size="sm"
                         onClick={() => buyPlant(flower)}
-                        disabled={totalPoints < flower.cost}
+                        disabled={!totalPoints || totalPoints < flower.cost}
                         className="w-full text-xs py-1 h-6"
                       >
                         Kaufen
@@ -1310,7 +1645,7 @@ function App() {
                   ))}
                 </div>
                 <p className="text-sm text-muted-foreground mt-4 text-center">
-                  💡 Ziehe Pflanzen per Drag & Drop in deinen Garten! • 🌟 Seltene Sorten haben bessere Boni • ✨ Kombiniere passende Pflanzen für Synergien
+                  💡 Ziehe Pflanzen per Drag & Drop in deinen Garten! • 🌟 Seltene Sorten haben bessere Boni • ✨ Kombiniere passende Pflanzen für Synergien • 🌤️ Wetter beeinflusst Wachstum und Punkte!
                 </p>
               </CardContent>
             </Card>
@@ -1323,7 +1658,7 @@ function App() {
                     <Flower className="w-5 h-5" />
                     Mein Garten
                   </CardTitle>
-                  {plantedFlowers.length > 0 && (
+                  {(plantedFlowers || []).length > 0 && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -1346,21 +1681,77 @@ function App() {
                       radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
                       radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.4) 0%, transparent 50%),
                       radial-gradient(circle at 40% 40%, rgba(120, 219, 226, 0.2) 0%, transparent 50%)
-                    `
+                    `,
+                    filter: currentWeather ? getWeatherFilter(currentWeather.condition.id) : 'none'
                   }}
                 >
+                  {/* Weather Effects Overlay */}
+                  {currentWeather && (
+                    <div className="absolute inset-0 pointer-events-none">
+                      {currentWeather.condition.id === 'rainy' && (
+                        <div className="absolute inset-0 bg-gradient-to-b from-blue-200/30 to-transparent animate-pulse">
+                          <div className="absolute top-2 left-4 text-blue-400 animate-bounce">💧</div>
+                          <div className="absolute top-8 left-12 text-blue-400 animate-bounce delay-200">💧</div>
+                          <div className="absolute top-6 left-20 text-blue-400 animate-bounce delay-500">💧</div>
+                          <div className="absolute top-10 left-32 text-blue-400 animate-bounce delay-300">💧</div>
+                        </div>
+                      )}
+                      {currentWeather.condition.id === 'snow' && (
+                        <div className="absolute inset-0 bg-gradient-to-b from-white/40 to-transparent">
+                          <div className="absolute top-4 left-8 text-white animate-bounce">❄️</div>
+                          <div className="absolute top-12 left-16 text-white animate-bounce delay-300">❄️</div>
+                          <div className="absolute top-8 left-24 text-white animate-bounce delay-600">❄️</div>
+                        </div>
+                      )}
+                      {currentWeather.condition.id === 'storm' && (
+                        <div className="absolute inset-0 bg-gradient-to-b from-gray-400/30 to-transparent animate-pulse">
+                          <div className="absolute top-6 left-16 text-yellow-300 animate-ping">⚡</div>
+                          <div className="absolute top-10 left-28 text-yellow-300 animate-ping delay-500">⚡</div>
+                        </div>
+                      )}
+                      {currentWeather.condition.id === 'rainbow' && (
+                        <div className="absolute inset-0 bg-gradient-to-r from-red-200/20 via-yellow-200/20 via-green-200/20 via-blue-200/20 to-purple-200/20 animate-pulse">
+                          <div className="absolute top-4 right-8 text-2xl animate-bounce">🌈</div>
+                        </div>
+                      )}
+                      {currentWeather.condition.id === 'aurora' && (
+                        <div className="absolute inset-0 bg-gradient-to-b from-purple-300/30 via-green-300/20 to-transparent animate-pulse">
+                          <div className="absolute top-2 left-1/2 text-purple-400 animate-ping">✨</div>
+                          <div className="absolute top-8 left-1/3 text-green-400 animate-ping delay-300">✨</div>
+                          <div className="absolute top-6 right-1/3 text-blue-400 animate-ping delay-600">✨</div>
+                        </div>
+                      )}
+                      {currentWeather.condition.id === 'windy' && (
+                        <div className="absolute inset-0">
+                          <div className="absolute top-8 left-8 text-gray-400 animate-bounce">💨</div>
+                          <div className="absolute top-12 left-20 text-gray-400 animate-bounce delay-200">💨</div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
                   {/* Sun */}
-                  <div className="absolute top-4 right-4 text-4xl">☀️</div>
+                  <div className={`absolute top-4 right-4 text-4xl transition-all duration-1000 ${
+                    currentWeather?.condition.id === 'sunny' ? 'animate-pulse scale-110' : 
+                    currentWeather?.condition.id === 'cloudy' || currentWeather?.condition.id === 'fog' ? 'opacity-50' :
+                    currentWeather?.condition.id === 'rainy' || currentWeather?.condition.id === 'storm' || currentWeather?.condition.id === 'snow' ? 'opacity-30' : ''
+                  }`}>☀️</div>
                   
                   {/* Clouds */}
-                  <div className="absolute top-6 left-8 text-2xl opacity-70">☁️</div>
-                  <div className="absolute top-4 left-1/3 text-xl opacity-50">☁️</div>
+                  <div className={`absolute top-6 left-8 text-2xl transition-all duration-1000 ${
+                    currentWeather?.condition.id === 'cloudy' || currentWeather?.condition.id === 'fog' ? 'opacity-100 scale-110' : 
+                    currentWeather?.condition.id === 'sunny' ? 'opacity-30' : 'opacity-70'
+                  }`}>☁️</div>
+                  <div className={`absolute top-4 left-1/3 text-xl transition-all duration-1000 ${
+                    currentWeather?.condition.id === 'cloudy' || currentWeather?.condition.id === 'fog' ? 'opacity-80 scale-105' : 
+                    currentWeather?.condition.id === 'sunny' ? 'opacity-20' : 'opacity-50'
+                  }`}>☁️</div>
                   
                   {/* Ground grass pattern */}
                   <div className="absolute bottom-0 w-full h-1/3 bg-gradient-to-t from-green-400 to-transparent"></div>
                   
                   {/* Planted flowers */}
-                  {plantedFlowers.map(plantedFlower => {
+                  {(plantedFlowers || []).map(plantedFlower => {
                     const flower = flowers.find(f => f.id === plantedFlower.flowerId)
                     if (!flower) return null
                     
@@ -1395,12 +1786,18 @@ function App() {
                           {flower.emoji}
                         </div>
                         
-                        {/* Enhanced tooltip */}
-                        <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-black/80 text-white text-xs px-3 py-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                        {/* Enhanced tooltip with weather effects */}
+                        <div className="absolute -top-16 left-1/2 transform -translate-x-1/2 bg-black/80 text-white text-xs px-3 py-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
                           <div className="font-medium">{flower.name}</div>
                           <div>Wachstum: {Math.floor(plantedFlower.growth)}%</div>
                           {plantedFlower.healthBonus > 0 && (
-                            <div className="text-green-300">Bonus: +{(plantedFlower.healthBonus * 100).toFixed(0)}%</div>
+                            <div className="text-green-300">Kombo-Bonus: +{(plantedFlower.healthBonus * 100).toFixed(0)}%</div>
+                          )}
+                          {currentWeather && new Date() < currentWeather.endTime && (
+                            <div className="text-blue-300">
+                              Wetter-Bonus: {currentWeather.condition.growthMultiplier > 1 ? '+' : ''}
+                              {((currentWeather.condition.growthMultiplier - 1) * 100).toFixed(0)}% Wachstum
+                            </div>
                           )}
                           <div className="text-xs opacity-75">Klicken zum Entfernen</div>
                         </div>
@@ -1426,21 +1823,36 @@ function App() {
                   </div>
                   
                   {/* Empty state message */}
-                  {plantedFlowers.length === 0 && (
+                  {(plantedFlowers || []).length === 0 && (
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="text-center text-white bg-black/50 p-6 rounded-lg">
                         <Flower className="w-12 h-12 mx-auto mb-2 opacity-70" />
                         <p className="text-lg font-medium mb-1">Dein Garten wartet auf dich!</p>
                         <p className="text-sm opacity-80">Ziehe Pflanzen hierher, um sie zu pflanzen</p>
-                        <p className="text-xs opacity-60 mt-1">Die Gärtnerin hilft dir beim Pflegen! 👩‍🌾</p>
+                        <p className="text-xs opacity-60 mt-1">
+                          Die Gärtnerin hilft beim Pflegen! 👩‍🌾
+                          {currentWeather && (
+                            <span className="block mt-1">
+                              Aktuelles Wetter: {currentWeather.condition.name} {currentWeather.condition.emoji}
+                            </span>
+                          )}
+                        </p>
                       </div>
                     </div>
                   )}
                 </div>
                 
-                {plantedFlowers.length > 0 && (
+                {(plantedFlowers || []).length > 0 && (
                   <p className="text-sm text-muted-foreground mt-4 text-center">
-                    🌱 Du hast {plantedFlowers.length} {plantedFlowers.length === 1 ? 'Pflanze' : 'Pflanzen'} in deinem Garten! Die Gärtnerin kümmert sich um sie. 👩‍🌾
+                    🌱 Du hast {(plantedFlowers || []).length} {(plantedFlowers || []).length === 1 ? 'Pflanze' : 'Pflanzen'} in deinem Garten! 
+                    Die Gärtnerin kümmert sich um sie. 👩‍🌾
+                    {currentWeather && new Date() < currentWeather.endTime && (
+                      <span className="block mt-1">
+                        🌤️ Aktuell: {currentWeather.condition.name} {currentWeather.condition.emoji} 
+                        (Wachstum: {currentWeather.condition.growthMultiplier > 1 ? '+' : ''}
+                        {((currentWeather.condition.growthMultiplier - 1) * 100).toFixed(0)}%)
+                      </span>
+                    )}
                   </p>
                 )}
               </CardContent>
@@ -1449,7 +1861,7 @@ function App() {
 
           {/* Statistics Tab */}
           <TabsContent value="stats" className="space-y-6">
-            {studySessions.length > 0 ? (
+            {(studySessions || []).length > 0 ? (
               <>
                 {/* Overview Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -1712,7 +2124,7 @@ function App() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
-                      {studySessions.slice(-10).reverse().map((session) => (
+                      {(studySessions || []).slice(-10).reverse().map((session) => (
                         <div key={session.id} className="flex items-center justify-between p-3 border rounded-lg">
                           <div className="flex items-center gap-3">
                             {session.type === 'timer' ? (
@@ -1741,7 +2153,7 @@ function App() {
                           </Badge>
                         </div>
                       ))}
-                      {studySessions.length === 0 && (
+                      {(studySessions || []).length === 0 && (
                         <p className="text-center text-muted-foreground py-8">
                           Noch keine Lernsessions aufgezeichnet
                         </p>
