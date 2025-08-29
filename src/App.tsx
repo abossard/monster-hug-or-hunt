@@ -6,9 +6,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Plus, Trophy, Target, CheckCircle, Play, Pause, Square, Clock, Flower, ShoppingCart, Trash } from '@phosphor-icons/react'
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
+import { Plus, Trophy, Target, CheckCircle, Play, Pause, Square, Clock, Flower, ShoppingCart, Trash, ChartBar, TrendUp, Calendar, Timer } from '@phosphor-icons/react'
 import { useKV } from '@github/spark/hooks'
 import { toast } from 'sonner'
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 
 interface Todo {
   id: number
@@ -32,6 +34,22 @@ interface PlantedFlower {
   flowerId: string
   x: number
   y: number
+}
+
+interface StudySession {
+  id: string
+  date: string
+  duration: number // in minutes
+  points: number
+  type: 'timer' | 'task'
+  taskText?: string
+}
+
+interface DailyStats {
+  date: string
+  studyTime: number // in minutes
+  tasksCompleted: number
+  pointsEarned: number
 }
 
 const flowers: Flower[] = [
@@ -73,6 +91,7 @@ function App() {
   const [todos, setTodos] = useKV<Todo[]>('study-todos', [])
   const [totalPoints, setTotalPoints] = useKV<number>('study-total-points', 0)
   const [plantedFlowers, setPlantedFlowers] = useKV<PlantedFlower[]>('garden-flowers', [])
+  const [studySessions, setStudySessions] = useKV<StudySession[]>('study-sessions', [])
   const [draggedFlower, setDraggedFlower] = useState<Flower | null>(null)
   
   // Timer state
@@ -114,6 +133,16 @@ function App() {
         setTotalPoints(current => current + pointsEarned)
       }
       
+      // Record study session
+      const newSession: StudySession = {
+        id: Date.now().toString(),
+        date: new Date().toISOString().split('T')[0],
+        duration: studyTimeInMinutes,
+        points: pointsEarned,
+        type: 'timer'
+      }
+      setStudySessions(current => [...current, newSession])
+      
       playNotificationSound()
       const randomBreakMessage = breakMessages[Math.floor(Math.random() * breakMessages.length)]
       toast.success(randomBreakMessage, {
@@ -127,7 +156,7 @@ function App() {
         clearTimeout(timerRef.current)
       }
     }
-  }, [isTimerRunning, isTimerPaused, timeLeft, timerMinutes, setTotalPoints])
+  }, [isTimerRunning, isTimerPaused, timeLeft, timerMinutes, setTotalPoints, setStudySessions])
 
   const playNotificationSound = () => {
     if (!audioContextRef.current) return
@@ -178,6 +207,17 @@ function App() {
       
       if (pointsEarned > 0) {
         setTotalPoints(current => current + pointsEarned)
+        
+        // Record partial study session
+        const newSession: StudySession = {
+          id: Date.now().toString(),
+          date: new Date().toISOString().split('T')[0],
+          duration: studiedMinutes,
+          points: pointsEarned,
+          type: 'timer'
+        }
+        setStudySessions(current => [...current, newSession])
+        
         toast.success(`Lernsession beendet! 📚`, {
           description: `Du hast ${studiedMinutes} Minuten gelernt und ${pointsEarned} Punkte erhalten!`,
           duration: 4000,
@@ -218,6 +258,17 @@ function App() {
         if (todo.id === todoId && !todo.completed) {
           // Add points when completing the task
           setTotalPoints(currentPoints => currentPoints + todo.points)
+          
+          // Record task completion session
+          const newSession: StudySession = {
+            id: Date.now().toString(),
+            date: new Date().toISOString().split('T')[0],
+            duration: 0, // Tasks don't have duration
+            points: todo.points,
+            type: 'task',
+            taskText: todo.text
+          }
+          setStudySessions(current => [...current, newSession])
           
           // Show motivational message
           const randomMessage = motivationalMessages[Math.floor(Math.random() * motivationalMessages.length)]
@@ -308,6 +359,88 @@ function App() {
     })
   }
 
+  // Statistics calculations
+  const calculateDailyStats = (): DailyStats[] => {
+    const stats: { [key: string]: DailyStats } = {}
+    
+    // Initialize with last 7 days
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date()
+      date.setDate(date.getDate() - i)
+      const dateStr = date.toISOString().split('T')[0]
+      stats[dateStr] = {
+        date: dateStr,
+        studyTime: 0,
+        tasksCompleted: 0,
+        pointsEarned: 0
+      }
+    }
+    
+    // Add data from study sessions
+    studySessions.forEach(session => {
+      if (stats[session.date]) {
+        stats[session.date].pointsEarned += session.points
+        if (session.type === 'timer') {
+          stats[session.date].studyTime += session.duration
+        } else {
+          stats[session.date].tasksCompleted += 1
+        }
+      }
+    })
+    
+    return Object.values(stats).sort((a, b) => a.date.localeCompare(b.date))
+  }
+
+  const getWeeklyTotals = () => {
+    const dailyStats = calculateDailyStats()
+    return {
+      totalStudyTime: dailyStats.reduce((sum, day) => sum + day.studyTime, 0),
+      totalTasks: dailyStats.reduce((sum, day) => sum + day.tasksCompleted, 0),
+      totalPoints: dailyStats.reduce((sum, day) => sum + day.pointsEarned, 0),
+      averageDaily: dailyStats.reduce((sum, day) => sum + day.studyTime, 0) / 7
+    }
+  }
+
+  const getStudyStreaks = () => {
+    const dailyStats = calculateDailyStats()
+    let currentStreak = 0
+    let longestStreak = 0
+    let tempStreak = 0
+    
+    // Calculate current streak (from today backwards)
+    for (let i = dailyStats.length - 1; i >= 0; i--) {
+      if (dailyStats[i].studyTime > 0 || dailyStats[i].tasksCompleted > 0) {
+        if (i === dailyStats.length - 1) currentStreak++
+        else if (currentStreak === dailyStats.length - 1 - i) currentStreak++
+        else break
+      } else if (i === dailyStats.length - 1) {
+        break
+      }
+    }
+    
+    // Calculate longest streak
+    dailyStats.forEach(day => {
+      if (day.studyTime > 0 || day.tasksCompleted > 0) {
+        tempStreak++
+        longestStreak = Math.max(longestStreak, tempStreak)
+      } else {
+        tempStreak = 0
+      }
+    })
+    
+    return { currentStreak, longestStreak }
+  }
+
+  const getActivityDistribution = () => {
+    const timerSessions = studySessions.filter(s => s.type === 'timer').length
+    const taskSessions = studySessions.filter(s => s.type === 'task').length
+    
+    return [
+      { name: 'Timer Sessions', value: timerSessions, color: '#8b5cf6' },
+      { name: 'Aufgaben erledigt', value: taskSessions, color: '#06d6a0' }
+    ]
+  }
+
   const pendingTodos = todos.filter(todo => !todo.completed)
   const completedTodos = todos.filter(todo => todo.completed)
 
@@ -347,7 +480,7 @@ function App() {
 
         {/* Main Tabs */}
         <Tabs defaultValue="study" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="study" className="flex items-center gap-2">
               <Target className="w-4 h-4" />
               Lernen
@@ -355,6 +488,10 @@ function App() {
             <TabsTrigger value="garden" className="flex items-center gap-2">
               <Flower className="w-4 h-4" />
               Garten
+            </TabsTrigger>
+            <TabsTrigger value="stats" className="flex items-center gap-2">
+              <ChartBar className="w-4 h-4" />
+              Statistiken
             </TabsTrigger>
           </TabsList>
 
@@ -715,6 +852,325 @@ function App() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Statistics Tab */}
+          <TabsContent value="stats" className="space-y-6">
+            {studySessions.length > 0 ? (
+              <>
+                {/* Overview Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="flex items-center space-x-2">
+                        <Timer className="w-5 h-5 text-primary" />
+                        <div>
+                          <p className="text-2xl font-bold">{Math.floor(getWeeklyTotals().totalStudyTime / 60)}h {getWeeklyTotals().totalStudyTime % 60}m</p>
+                          <p className="text-xs text-muted-foreground">Lernzeit (7 Tage)</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="flex items-center space-x-2">
+                        <CheckCircle className="w-5 h-5 text-secondary" />
+                        <div>
+                          <p className="text-2xl font-bold">{getWeeklyTotals().totalTasks}</p>
+                          <p className="text-xs text-muted-foreground">Aufgaben erledigt</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="flex items-center space-x-2">
+                        <Trophy className="w-5 h-5 text-accent" />
+                        <div>
+                          <p className="text-2xl font-bold">{getWeeklyTotals().totalPoints}</p>
+                          <p className="text-xs text-muted-foreground">Punkte erhalten</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="flex items-center space-x-2">
+                        <TrendUp className="w-5 h-5 text-primary" />
+                        <div>
+                          <p className="text-2xl font-bold">{getStudyStreaks().currentStreak}</p>
+                          <p className="text-xs text-muted-foreground">Aktuelle Serie</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Charts */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Daily Study Time Chart */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Calendar className="w-5 h-5" />
+                        Tägliche Lernzeit (7 Tage)
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ChartContainer
+                        config={{
+                          studyTime: {
+                            label: "Lernzeit (Min)",
+                            color: "hsl(var(--primary))",
+                          },
+                        }}
+                        className="h-[200px]"
+                      >
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={calculateDailyStats()}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                            <XAxis 
+                              dataKey="date" 
+                              stroke="hsl(var(--muted-foreground))"
+                              fontSize={12}
+                              tickFormatter={(value) => {
+                                const date = new Date(value)
+                                return date.toLocaleDateString('de-DE', { weekday: 'short' })
+                              }}
+                            />
+                            <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                            <ChartTooltip 
+                              content={<ChartTooltipContent />}
+                              labelFormatter={(value) => {
+                                const date = new Date(value)
+                                return date.toLocaleDateString('de-DE', { 
+                                  weekday: 'long',
+                                  day: 'numeric',
+                                  month: 'short' 
+                                })
+                              }}
+                            />
+                            <Bar 
+                              dataKey="studyTime" 
+                              fill="hsl(var(--primary))" 
+                              radius={[4, 4, 0, 0]}
+                            />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </ChartContainer>
+                    </CardContent>
+                  </Card>
+
+                  {/* Points Progress Chart */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Trophy className="w-5 h-5" />
+                        Punkte-Verlauf
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ChartContainer
+                        config={{
+                          pointsEarned: {
+                            label: "Punkte",
+                            color: "hsl(var(--accent))",
+                          },
+                        }}
+                        className="h-[200px]"
+                      >
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart data={calculateDailyStats()}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                            <XAxis 
+                              dataKey="date" 
+                              stroke="hsl(var(--muted-foreground))"
+                              fontSize={12}
+                              tickFormatter={(value) => {
+                                const date = new Date(value)
+                                return date.toLocaleDateString('de-DE', { weekday: 'short' })
+                              }}
+                            />
+                            <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                            <ChartTooltip 
+                              content={<ChartTooltipContent />}
+                              labelFormatter={(value) => {
+                                const date = new Date(value)
+                                return date.toLocaleDateString('de-DE', { 
+                                  weekday: 'long',
+                                  day: 'numeric',
+                                  month: 'short' 
+                                })
+                              }}
+                            />
+                            <Line 
+                              type="monotone" 
+                              dataKey="pointsEarned" 
+                              stroke="hsl(var(--accent))" 
+                              strokeWidth={3}
+                              dot={{ fill: "hsl(var(--accent))", strokeWidth: 2, r: 4 }}
+                              activeDot={{ r: 6, stroke: "hsl(var(--accent))", strokeWidth: 2 }}
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </ChartContainer>
+                    </CardContent>
+                  </Card>
+
+                  {/* Activity Distribution */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <ChartBar className="w-5 h-5" />
+                        Aktivitäts-Verteilung
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ChartContainer
+                        config={{
+                          timerSessions: {
+                            label: "Timer Sessions",
+                            color: "#8b5cf6",
+                          },
+                          taskSessions: {
+                            label: "Aufgaben erledigt", 
+                            color: "#06d6a0",
+                          },
+                        }}
+                        className="h-[200px]"
+                      >
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={getActivityDistribution()}
+                              cx="50%"
+                              cy="50%"
+                              outerRadius={80}
+                              dataKey="value"
+                              label={({ name, value }) => `${name}: ${value}`}
+                            >
+                              {getActivityDistribution().map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.color} />
+                              ))}
+                            </Pie>
+                            <ChartTooltip content={<ChartTooltipContent />} />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </ChartContainer>
+                    </CardContent>
+                  </Card>
+
+                  {/* Study Streaks */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <TrendUp className="w-5 h-5" />
+                        Lern-Serien
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                        <div>
+                          <p className="text-sm text-muted-foreground">Aktuelle Serie</p>
+                          <p className="text-2xl font-bold text-primary">{getStudyStreaks().currentStreak} Tage</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm text-muted-foreground">Längste Serie</p>
+                          <p className="text-xl font-semibold text-accent">{getStudyStreaks().longestStreak} Tage</p>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium">Wochenübersicht</p>
+                        <div className="flex gap-1">
+                          {calculateDailyStats().map((day, index) => {
+                            const hasActivity = day.studyTime > 0 || day.tasksCompleted > 0
+                            const date = new Date(day.date)
+                            return (
+                              <div
+                                key={day.date}
+                                className={`w-8 h-8 rounded-md flex items-center justify-center text-xs font-medium transition-colors ${
+                                  hasActivity 
+                                    ? 'bg-primary text-primary-foreground' 
+                                    : 'bg-muted text-muted-foreground'
+                                }`}
+                                title={`${date.toLocaleDateString('de-DE', { weekday: 'short' })}: ${day.studyTime}min, ${day.tasksCompleted} Aufgaben`}
+                              >
+                                {date.getDate()}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Recent Sessions */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Clock className="w-5 h-5" />
+                      Letzte Lernsessions
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {studySessions.slice(-10).reverse().map((session) => (
+                        <div key={session.id} className="flex items-center justify-between p-3 border rounded-lg">
+                          <div className="flex items-center gap-3">
+                            {session.type === 'timer' ? (
+                              <Timer className="w-4 h-4 text-primary" />
+                            ) : (
+                              <CheckCircle className="w-4 h-4 text-secondary" />
+                            )}
+                            <div>
+                              <p className="font-medium">
+                                {session.type === 'timer' 
+                                  ? `${session.duration} Minuten Lernsession`
+                                  : session.taskText || 'Aufgabe erledigt'
+                                }
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                {new Date(session.date).toLocaleDateString('de-DE', {
+                                  weekday: 'long',
+                                  day: 'numeric',
+                                  month: 'short'
+                                })}
+                              </p>
+                            </div>
+                          </div>
+                          <Badge variant="secondary">
+                            +{session.points} Punkte
+                          </Badge>
+                        </div>
+                      ))}
+                      {studySessions.length === 0 && (
+                        <p className="text-center text-muted-foreground py-8">
+                          Noch keine Lernsessions aufgezeichnet
+                        </p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            ) : (
+              /* Empty Stats State */
+              <Card>
+                <CardContent className="py-12 text-center space-y-4">
+                  <ChartBar className="w-16 h-16 text-muted-foreground mx-auto" />
+                  <h3 className="text-xl font-semibold text-foreground">
+                    Noch keine Statistiken verfügbar
+                  </h3>
+                  <p className="text-muted-foreground max-w-md mx-auto">
+                    Beginne mit dem Lernen oder erledige Aufgaben, um deine ersten Statistiken zu sehen!
+                  </p>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
         </Tabs>
       </div>
