@@ -477,6 +477,16 @@ const getWeatherFilter = (weatherId: string): string => {
   }
 }
 
+// Helper function to ensure currentWeather has proper Date objects
+const normalizeWeather = (weather: CurrentWeather | null): CurrentWeather | null => {
+  if (!weather) return null
+  return {
+    ...weather,
+    startTime: new Date(weather.startTime),
+    endTime: new Date(weather.endTime)
+  }
+}
+
 function App() {
   const [newTodoText, setNewTodoText] = useState('')
   const [newTodoPoints, setNewTodoPoints] = useState('1')
@@ -528,7 +538,10 @@ function App() {
   const updateWeather = () => {
     const now = new Date()
     
-    if (!currentWeather || now >= currentWeather.endTime) {
+    // Ensure endTime is a Date object
+    const normalizedWeather = normalizeWeather(currentWeather)
+    
+    if (!normalizedWeather || now >= normalizedWeather.endTime) {
       const newWeather = generateRandomWeather()
       setCurrentWeather(newWeather)
       
@@ -706,9 +719,10 @@ function App() {
       let passivePoints = 0
       const now = new Date()
       
-      // Get current weather multiplier
-      const weatherMultiplier = currentWeather && now < currentWeather.endTime 
-        ? currentWeather.condition.pointsMultiplier 
+      // Get current weather multiplier with proper date handling
+      const normalizedWeather = normalizeWeather(currentWeather)
+      const weatherMultiplier = normalizedWeather && now < normalizedWeather.endTime
+        ? normalizedWeather.condition.pointsMultiplier 
         : 1.0
       
       setPlantedFlowers(currentFlowers => {
@@ -718,9 +732,9 @@ function App() {
           if (!flower) return plantedFlower
           
           // Calculate growth over time with weather effects
-          const hoursPlanted = (now.getTime() - plantedFlower.plantedAt.getTime()) / (1000 * 60 * 60)
-          const weatherGrowthMultiplier = currentWeather && now < currentWeather.endTime 
-            ? currentWeather.condition.growthMultiplier 
+          const hoursPlanted = (now.getTime() - new Date(plantedFlower.plantedAt).getTime()) / (1000 * 60 * 60)
+          const weatherGrowthMultiplier = normalizedWeather && now < normalizedWeather.endTime
+            ? normalizedWeather.condition.growthMultiplier 
             : 1.0
           const adjustedGrowthTime = flower.growthTime / weatherGrowthMultiplier
           const newGrowth = Math.min(100, (hoursPlanted / adjustedGrowthTime) * 100)
@@ -1073,8 +1087,9 @@ function App() {
     
     // Calculate passive income with current weather effects
     const now = new Date()
-    const weatherMultiplier = currentWeather && now < currentWeather.endTime 
-      ? currentWeather.condition.pointsMultiplier 
+    const normalizedWeather = normalizeWeather(currentWeather)
+    const weatherMultiplier = normalizedWeather && now < normalizedWeather.endTime
+      ? normalizedWeather.condition.pointsMultiplier 
       : 1.0
     
     const passiveIncome = (plantedFlowers || []).reduce((sum, pf) => {
@@ -1088,6 +1103,9 @@ function App() {
 
   const pendingTodos = (todos || []).filter(todo => !todo.completed)
   const completedTodos = (todos || []).filter(todo => todo.completed)
+  
+  // Normalize weather data for consistent usage
+  const normalizedCurrentWeather = normalizeWeather(currentWeather)
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
@@ -1365,17 +1383,17 @@ function App() {
           {/* Garden Tab */}
           <TabsContent value="garden" className="space-y-6">
             {/* Current Weather Display */}
-            {currentWeather && (
+            {normalizedCurrentWeather && (
               <Card className="border-2 border-accent/50 bg-accent/10">
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
                     <span className="flex items-center gap-2">
-                      <span className="text-2xl">{currentWeather.condition.emoji}</span>
-                      <span>Aktuelles Wetter: {currentWeather.condition.name}</span>
+                      <span className="text-2xl">{normalizedCurrentWeather.condition.emoji}</span>
+                      <span>Aktuelles Wetter: {normalizedCurrentWeather.condition.name}</span>
                     </span>
                     <div className="text-right text-sm">
                       <div className="text-muted-foreground">
-                        Noch {Math.ceil((currentWeather.endTime.getTime() - new Date().getTime()) / (1000 * 60 * 60))}h
+                        Noch {Math.ceil((normalizedCurrentWeather.endTime.getTime() - new Date().getTime()) / (1000 * 60 * 60))}h
                       </div>
                       <Button
                         variant="outline"
@@ -1399,20 +1417,20 @@ function App() {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="text-center">
                       <p className="text-sm text-muted-foreground">Beschreibung</p>
-                      <p className="font-medium">{currentWeather.condition.description}</p>
+                      <p className="font-medium">{normalizedCurrentWeather.condition.description}</p>
                     </div>
                     <div className="text-center">
                       <p className="text-sm text-muted-foreground">Wachstums-Effekt</p>
-                      <p className={`font-bold ${currentWeather.condition.growthMultiplier > 1 ? 'text-green-600' : currentWeather.condition.growthMultiplier < 1 ? 'text-red-600' : 'text-gray-600'}`}>
-                        {currentWeather.condition.growthMultiplier > 1 ? '+' : ''}
-                        {((currentWeather.condition.growthMultiplier - 1) * 100).toFixed(0)}%
+                      <p className={`font-bold ${normalizedCurrentWeather.condition.growthMultiplier > 1 ? 'text-green-600' : normalizedCurrentWeather.condition.growthMultiplier < 1 ? 'text-red-600' : 'text-gray-600'}`}>
+                        {normalizedCurrentWeather.condition.growthMultiplier > 1 ? '+' : ''}
+                        {((normalizedCurrentWeather.condition.growthMultiplier - 1) * 100).toFixed(0)}%
                       </p>
                     </div>
                     <div className="text-center">
                       <p className="text-sm text-muted-foreground">Punkte-Effekt</p>
-                      <p className={`font-bold ${currentWeather.condition.pointsMultiplier > 1 ? 'text-green-600' : currentWeather.condition.pointsMultiplier < 1 ? 'text-red-600' : 'text-gray-600'}`}>
-                        {currentWeather.condition.pointsMultiplier > 1 ? '+' : ''}
-                        {((currentWeather.condition.pointsMultiplier - 1) * 100).toFixed(0)}%
+                      <p className={`font-bold ${normalizedCurrentWeather.condition.pointsMultiplier > 1 ? 'text-green-600' : normalizedCurrentWeather.condition.pointsMultiplier < 1 ? 'text-red-600' : 'text-gray-600'}`}>
+                        {normalizedCurrentWeather.condition.pointsMultiplier > 1 ? '+' : ''}
+                        {((normalizedCurrentWeather.condition.pointsMultiplier - 1) * 100).toFixed(0)}%
                       </p>
                     </div>
                   </div>
@@ -1422,13 +1440,13 @@ function App() {
                     <Badge 
                       variant="outline" 
                       className={`${
-                        currentWeather.condition.rarity === 'epic' ? 'border-purple-500 text-purple-600' :
-                        currentWeather.condition.rarity === 'rare' ? 'border-blue-500 text-blue-600' :
+                        normalizedCurrentWeather.condition.rarity === 'epic' ? 'border-purple-500 text-purple-600' :
+                        normalizedCurrentWeather.condition.rarity === 'rare' ? 'border-blue-500 text-blue-600' :
                         'border-gray-500 text-gray-600'
                       }`}
                     >
-                      {currentWeather.condition.rarity === 'epic' ? '⭐ Episch' :
-                       currentWeather.condition.rarity === 'rare' ? '💎 Selten' :
+                      {normalizedCurrentWeather.condition.rarity === 'epic' ? '⭐ Episch' :
+                       normalizedCurrentWeather.condition.rarity === 'rare' ? '💎 Selten' :
                        '🌿 Normal'}
                     </Badge>
                   </div>
@@ -1468,18 +1486,18 @@ function App() {
                     <div>
                       <p className="text-2xl font-bold flex items-center gap-1">
                         {getGardenStats().passiveIncome.toFixed(1)}/h
-                        {currentWeather && new Date() < currentWeather.endTime && currentWeather.condition.pointsMultiplier !== 1.0 && (
-                          <span className={`text-xs ${currentWeather.condition.pointsMultiplier > 1 ? 'text-green-600' : 'text-red-600'}`}>
-                            {currentWeather.condition.emoji}
+                        {normalizedCurrentWeather && new Date() < normalizedCurrentWeather.endTime && normalizedCurrentWeather.condition.pointsMultiplier !== 1.0 && (
+                          <span className={`text-xs ${normalizedCurrentWeather.condition.pointsMultiplier > 1 ? 'text-green-600' : 'text-red-600'}`}>
+                            {normalizedCurrentWeather.condition.emoji}
                           </span>
                         )}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         Passive Punkte
-                        {currentWeather && new Date() < currentWeather.endTime && currentWeather.condition.pointsMultiplier !== 1.0 && (
-                          <span className={`ml-1 ${currentWeather.condition.pointsMultiplier > 1 ? 'text-green-600' : 'text-red-600'}`}>
-                            ({currentWeather.condition.pointsMultiplier > 1 ? '+' : ''}
-                            {((currentWeather.condition.pointsMultiplier - 1) * 100).toFixed(0)}%)
+                        {normalizedCurrentWeather && new Date() < normalizedCurrentWeather.endTime && normalizedCurrentWeather.condition.pointsMultiplier !== 1.0 && (
+                          <span className={`ml-1 ${normalizedCurrentWeather.condition.pointsMultiplier > 1 ? 'text-green-600' : 'text-red-600'}`}>
+                            ({normalizedCurrentWeather.condition.pointsMultiplier > 1 ? '+' : ''}
+                            {((normalizedCurrentWeather.condition.pointsMultiplier - 1) * 100).toFixed(0)}%)
                           </span>
                         )}
                       </p>
@@ -1502,7 +1520,7 @@ function App() {
                     <div 
                       key={condition.id}
                       className={`text-center p-2 rounded border transition-all cursor-pointer hover:bg-muted/50 ${
-                        currentWeather?.condition.id === condition.id ? 'border-accent bg-accent/20' : 'border-muted'
+                        normalizedCurrentWeather?.condition.id === condition.id ? 'border-accent bg-accent/20' : 'border-muted'
                       }`}
                       onClick={() => {
                         const newWeather: CurrentWeather = {
@@ -1682,13 +1700,13 @@ function App() {
                       radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.4) 0%, transparent 50%),
                       radial-gradient(circle at 40% 40%, rgba(120, 219, 226, 0.2) 0%, transparent 50%)
                     `,
-                    filter: currentWeather ? getWeatherFilter(currentWeather.condition.id) : 'none'
+                    filter: normalizedCurrentWeather ? getWeatherFilter(normalizedCurrentWeather.condition.id) : 'none'
                   }}
                 >
                   {/* Weather Effects Overlay */}
-                  {currentWeather && (
+                  {normalizedCurrentWeather && (
                     <div className="absolute inset-0 pointer-events-none">
-                      {currentWeather.condition.id === 'rainy' && (
+                      {normalizedCurrentWeather.condition.id === 'rainy' && (
                         <div className="absolute inset-0 bg-gradient-to-b from-blue-200/30 to-transparent animate-pulse">
                           <div className="absolute top-2 left-4 text-blue-400 animate-bounce">💧</div>
                           <div className="absolute top-8 left-12 text-blue-400 animate-bounce delay-200">💧</div>
@@ -1696,32 +1714,32 @@ function App() {
                           <div className="absolute top-10 left-32 text-blue-400 animate-bounce delay-300">💧</div>
                         </div>
                       )}
-                      {currentWeather.condition.id === 'snow' && (
+                      {normalizedCurrentWeather.condition.id === 'snow' && (
                         <div className="absolute inset-0 bg-gradient-to-b from-white/40 to-transparent">
                           <div className="absolute top-4 left-8 text-white animate-bounce">❄️</div>
                           <div className="absolute top-12 left-16 text-white animate-bounce delay-300">❄️</div>
                           <div className="absolute top-8 left-24 text-white animate-bounce delay-600">❄️</div>
                         </div>
                       )}
-                      {currentWeather.condition.id === 'storm' && (
+                      {normalizedCurrentWeather.condition.id === 'storm' && (
                         <div className="absolute inset-0 bg-gradient-to-b from-gray-400/30 to-transparent animate-pulse">
                           <div className="absolute top-6 left-16 text-yellow-300 animate-ping">⚡</div>
                           <div className="absolute top-10 left-28 text-yellow-300 animate-ping delay-500">⚡</div>
                         </div>
                       )}
-                      {currentWeather.condition.id === 'rainbow' && (
+                      {normalizedCurrentWeather.condition.id === 'rainbow' && (
                         <div className="absolute inset-0 bg-gradient-to-r from-red-200/20 via-yellow-200/20 via-green-200/20 via-blue-200/20 to-purple-200/20 animate-pulse">
                           <div className="absolute top-4 right-8 text-2xl animate-bounce">🌈</div>
                         </div>
                       )}
-                      {currentWeather.condition.id === 'aurora' && (
+                      {normalizedCurrentWeather.condition.id === 'aurora' && (
                         <div className="absolute inset-0 bg-gradient-to-b from-purple-300/30 via-green-300/20 to-transparent animate-pulse">
                           <div className="absolute top-2 left-1/2 text-purple-400 animate-ping">✨</div>
                           <div className="absolute top-8 left-1/3 text-green-400 animate-ping delay-300">✨</div>
                           <div className="absolute top-6 right-1/3 text-blue-400 animate-ping delay-600">✨</div>
                         </div>
                       )}
-                      {currentWeather.condition.id === 'windy' && (
+                      {normalizedCurrentWeather.condition.id === 'windy' && (
                         <div className="absolute inset-0">
                           <div className="absolute top-8 left-8 text-gray-400 animate-bounce">💨</div>
                           <div className="absolute top-12 left-20 text-gray-400 animate-bounce delay-200">💨</div>
@@ -1732,19 +1750,19 @@ function App() {
                   
                   {/* Sun */}
                   <div className={`absolute top-4 right-4 text-4xl transition-all duration-1000 ${
-                    currentWeather?.condition.id === 'sunny' ? 'animate-pulse scale-110' : 
-                    currentWeather?.condition.id === 'cloudy' || currentWeather?.condition.id === 'fog' ? 'opacity-50' :
-                    currentWeather?.condition.id === 'rainy' || currentWeather?.condition.id === 'storm' || currentWeather?.condition.id === 'snow' ? 'opacity-30' : ''
+                    normalizedCurrentWeather?.condition.id === 'sunny' ? 'animate-pulse scale-110' : 
+                    normalizedCurrentWeather?.condition.id === 'cloudy' || normalizedCurrentWeather?.condition.id === 'fog' ? 'opacity-50' :
+                    normalizedCurrentWeather?.condition.id === 'rainy' || normalizedCurrentWeather?.condition.id === 'storm' || normalizedCurrentWeather?.condition.id === 'snow' ? 'opacity-30' : ''
                   }`}>☀️</div>
                   
                   {/* Clouds */}
                   <div className={`absolute top-6 left-8 text-2xl transition-all duration-1000 ${
-                    currentWeather?.condition.id === 'cloudy' || currentWeather?.condition.id === 'fog' ? 'opacity-100 scale-110' : 
-                    currentWeather?.condition.id === 'sunny' ? 'opacity-30' : 'opacity-70'
+                    normalizedCurrentWeather?.condition.id === 'cloudy' || normalizedCurrentWeather?.condition.id === 'fog' ? 'opacity-100 scale-110' : 
+                    normalizedCurrentWeather?.condition.id === 'sunny' ? 'opacity-30' : 'opacity-70'
                   }`}>☁️</div>
                   <div className={`absolute top-4 left-1/3 text-xl transition-all duration-1000 ${
-                    currentWeather?.condition.id === 'cloudy' || currentWeather?.condition.id === 'fog' ? 'opacity-80 scale-105' : 
-                    currentWeather?.condition.id === 'sunny' ? 'opacity-20' : 'opacity-50'
+                    normalizedCurrentWeather?.condition.id === 'cloudy' || normalizedCurrentWeather?.condition.id === 'fog' ? 'opacity-80 scale-105' : 
+                    normalizedCurrentWeather?.condition.id === 'sunny' ? 'opacity-20' : 'opacity-50'
                   }`}>☁️</div>
                   
                   {/* Ground grass pattern */}
@@ -1793,10 +1811,10 @@ function App() {
                           {plantedFlower.healthBonus > 0 && (
                             <div className="text-green-300">Kombo-Bonus: +{(plantedFlower.healthBonus * 100).toFixed(0)}%</div>
                           )}
-                          {currentWeather && new Date() < currentWeather.endTime && (
+                          {normalizedCurrentWeather && new Date() < normalizedCurrentWeather.endTime && (
                             <div className="text-blue-300">
-                              Wetter-Bonus: {currentWeather.condition.growthMultiplier > 1 ? '+' : ''}
-                              {((currentWeather.condition.growthMultiplier - 1) * 100).toFixed(0)}% Wachstum
+                              Wetter-Bonus: {normalizedCurrentWeather.condition.growthMultiplier > 1 ? '+' : ''}
+                              {((normalizedCurrentWeather.condition.growthMultiplier - 1) * 100).toFixed(0)}% Wachstum
                             </div>
                           )}
                           <div className="text-xs opacity-75">Klicken zum Entfernen</div>
@@ -1831,9 +1849,9 @@ function App() {
                         <p className="text-sm opacity-80">Ziehe Pflanzen hierher, um sie zu pflanzen</p>
                         <p className="text-xs opacity-60 mt-1">
                           Die Gärtnerin hilft beim Pflegen! 👩‍🌾
-                          {currentWeather && (
+                          {normalizedCurrentWeather && (
                             <span className="block mt-1">
-                              Aktuelles Wetter: {currentWeather.condition.name} {currentWeather.condition.emoji}
+                              Aktuelles Wetter: {normalizedCurrentWeather.condition.name} {normalizedCurrentWeather.condition.emoji}
                             </span>
                           )}
                         </p>
@@ -1846,11 +1864,11 @@ function App() {
                   <p className="text-sm text-muted-foreground mt-4 text-center">
                     🌱 Du hast {(plantedFlowers || []).length} {(plantedFlowers || []).length === 1 ? 'Pflanze' : 'Pflanzen'} in deinem Garten! 
                     Die Gärtnerin kümmert sich um sie. 👩‍🌾
-                    {currentWeather && new Date() < currentWeather.endTime && (
+                    {normalizedCurrentWeather && new Date() < normalizedCurrentWeather.endTime && (
                       <span className="block mt-1">
-                        🌤️ Aktuell: {currentWeather.condition.name} {currentWeather.condition.emoji} 
-                        (Wachstum: {currentWeather.condition.growthMultiplier > 1 ? '+' : ''}
-                        {((currentWeather.condition.growthMultiplier - 1) * 100).toFixed(0)}%)
+                        🌤️ Aktuell: {normalizedCurrentWeather.condition.name} {normalizedCurrentWeather.condition.emoji} 
+                        (Wachstum: {normalizedCurrentWeather.condition.growthMultiplier > 1 ? '+' : ''}
+                        {((normalizedCurrentWeather.condition.growthMultiplier - 1) * 100).toFixed(0)}%)
                       </span>
                     )}
                   </p>
