@@ -27,6 +27,10 @@ interface Flower {
   emoji: string
   color: string
   size: 'small' | 'medium' | 'large'
+  rarity: 'common' | 'rare' | 'epic' | 'legendary'
+  growthTime: number // hours to fully grow
+  pointsPerHour: number // passive point generation
+  comboBonus?: string[] // flower IDs that give bonus when planted nearby
 }
 
 interface PlantedFlower {
@@ -34,6 +38,10 @@ interface PlantedFlower {
   flowerId: string
   x: number
   y: number
+  plantedAt: Date
+  growth: number // 0-100% growth level
+  lastWatered?: Date
+  healthBonus: number // bonus from neighboring flowers
 }
 
 interface StudySession {
@@ -45,6 +53,20 @@ interface StudySession {
   taskText?: string
 }
 
+interface GardenAchievement {
+  id: string
+  name: string
+  description: string
+  emoji: string
+  requirement: {
+    type: 'flowers_planted' | 'rare_flowers' | 'combo_bonus' | 'garden_value' | 'daily_care'
+    count: number
+    specific?: string[]
+  }
+  reward: number
+  unlocked: boolean
+}
+
 interface DailyStats {
   date: string
   studyTime: number // in minutes
@@ -53,14 +75,90 @@ interface DailyStats {
 }
 
 const flowers: Flower[] = [
-  { id: 'daisy', name: 'Gänseblümchen', cost: 5, emoji: '🌼', color: '#ffffff', size: 'small' },
-  { id: 'tulip', name: 'Tulpe', cost: 8, emoji: '🌷', color: '#ff69b4', size: 'medium' },
-  { id: 'sunflower', name: 'Sonnenblume', cost: 12, emoji: '🌻', color: '#ffd700', size: 'large' },
-  { id: 'rose', name: 'Rose', cost: 15, emoji: '🌹', color: '#ff0000', size: 'medium' },
-  { id: 'hibiscus', name: 'Hibiskus', cost: 20, emoji: '🌺', color: '#ff1493', size: 'large' },
-  { id: 'cherry', name: 'Kirschblüte', cost: 25, emoji: '🌸', color: '#ffb6c1', size: 'medium' },
-  { id: 'lotus', name: 'Lotus', cost: 30, emoji: '🪷', color: '#dda0dd', size: 'large' },
-  { id: 'orchid', name: 'Orchidee', cost: 40, emoji: '🌺', color: '#da70d6', size: 'large' }
+  { 
+    id: 'daisy', name: 'Gänseblümchen', cost: 5, emoji: '🌼', color: '#ffffff', size: 'small',
+    rarity: 'common', growthTime: 2, pointsPerHour: 0.5, comboBonus: ['tulip', 'sunflower']
+  },
+  { 
+    id: 'tulip', name: 'Tulpe', cost: 8, emoji: '🌷', color: '#ff69b4', size: 'medium',
+    rarity: 'common', growthTime: 3, pointsPerHour: 0.8, comboBonus: ['daisy', 'rose']
+  },
+  { 
+    id: 'sunflower', name: 'Sonnenblume', cost: 12, emoji: '🌻', color: '#ffd700', size: 'large',
+    rarity: 'common', growthTime: 4, pointsPerHour: 1.2, comboBonus: ['daisy']
+  },
+  { 
+    id: 'rose', name: 'Rose', cost: 15, emoji: '🌹', color: '#ff0000', size: 'medium',
+    rarity: 'rare', growthTime: 6, pointsPerHour: 2, comboBonus: ['tulip', 'lotus']
+  },
+  { 
+    id: 'hibiscus', name: 'Hibiskus', cost: 20, emoji: '🌺', color: '#ff1493', size: 'large',
+    rarity: 'rare', growthTime: 8, pointsPerHour: 2.5, comboBonus: ['orchid']
+  },
+  { 
+    id: 'cherry', name: 'Kirschblüte', cost: 25, emoji: '🌸', color: '#ffb6c1', size: 'medium',
+    rarity: 'epic', growthTime: 12, pointsPerHour: 3, comboBonus: ['lotus', 'orchid']
+  },
+  { 
+    id: 'lotus', name: 'Lotus', cost: 30, emoji: '🪷', color: '#dda0dd', size: 'large',
+    rarity: 'epic', growthTime: 16, pointsPerHour: 4, comboBonus: ['rose', 'cherry']
+  },
+  { 
+    id: 'orchid', name: 'Orchidee', cost: 40, emoji: '🌺', color: '#da70d6', size: 'large',
+    rarity: 'legendary', growthTime: 24, pointsPerHour: 6, comboBonus: ['hibiscus', 'cherry']
+  },
+  { 
+    id: 'phoenix', name: 'Phoenix-Blume', cost: 100, emoji: '🔥', color: '#ff4500', size: 'large',
+    rarity: 'legendary', growthTime: 48, pointsPerHour: 15, comboBonus: ['lotus', 'orchid']
+  }
+]
+
+const gardenAchievements: GardenAchievement[] = [
+  {
+    id: 'first_flower',
+    name: 'Erster Spross',
+    description: 'Pflanze deine erste Blume',
+    emoji: '🌱',
+    requirement: { type: 'flowers_planted', count: 1 },
+    reward: 5,
+    unlocked: false
+  },
+  {
+    id: 'flower_collector',
+    name: 'Blumen-Sammler',
+    description: 'Pflanze 10 verschiedene Blumen',
+    emoji: '🌸',
+    requirement: { type: 'flowers_planted', count: 10 },
+    reward: 15,
+    unlocked: false
+  },
+  {
+    id: 'rare_gardener',
+    name: 'Seltener Gärtner',
+    description: 'Sammle 3 seltene oder bessere Blumen',
+    emoji: '💎',
+    requirement: { type: 'rare_flowers', count: 3 },
+    reward: 25,
+    unlocked: false
+  },
+  {
+    id: 'combo_master',
+    name: 'Combo-Meister',
+    description: 'Erstelle 5 Blumen-Kombinationen',
+    emoji: '⚡',
+    requirement: { type: 'combo_bonus', count: 5 },
+    reward: 30,
+    unlocked: false
+  },
+  {
+    id: 'garden_paradise',
+    name: 'Garten-Paradies',
+    description: 'Erreiche einen Gartenwert von 500 Punkten',
+    emoji: '🏆',
+    requirement: { type: 'garden_value', count: 500 },
+    reward: 50,
+    unlocked: false
+  }
 ]
 
 const motivationalMessages = [
@@ -92,6 +190,8 @@ function App() {
   const [totalPoints, setTotalPoints] = useKV<number>('study-total-points', 0)
   const [plantedFlowers, setPlantedFlowers] = useKV<PlantedFlower[]>('garden-flowers', [])
   const [studySessions, setStudySessions] = useKV<StudySession[]>('study-sessions', [])
+  const [achievements, setAchievements] = useKV<GardenAchievement[]>('garden-achievements', gardenAchievements)
+  const [lastWateringDate, setLastWateringDate] = useKV<string>('last-watering-date', '')
   const [draggedFlower, setDraggedFlower] = useState<Flower | null>(null)
   
   // Timer state
@@ -230,11 +330,130 @@ function App() {
     setTimeLeft(0)
   }
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+  // Passive point generation from garden
+  useEffect(() => {
+    const interval = setInterval(() => {
+      let passivePoints = 0
+      const now = new Date()
+      
+      setPlantedFlowers(currentFlowers => {
+        return currentFlowers.map(plantedFlower => {
+          const flower = flowers.find(f => f.id === plantedFlower.flowerId)
+          if (!flower) return plantedFlower
+          
+          // Calculate growth over time
+          const hoursPlanted = (now.getTime() - plantedFlower.plantedAt.getTime()) / (1000 * 60 * 60)
+          const newGrowth = Math.min(100, (hoursPlanted / flower.growthTime) * 100)
+          
+          // Calculate combo bonus
+          const nearbyFlowers = currentFlowers.filter(other => {
+            if (other.id === plantedFlower.id) return false
+            const distance = Math.sqrt(
+              Math.pow(other.x - plantedFlower.x, 2) + Math.pow(other.y - plantedFlower.y, 2)
+            )
+            return distance < 15 // Within 15% of garden space
+          })
+          
+          let comboBonus = 0
+          if (flower.comboBonus) {
+            nearbyFlowers.forEach(nearby => {
+              const nearbyFlower = flowers.find(f => f.id === nearby.flowerId)
+              if (nearbyFlower && flower.comboBonus?.includes(nearbyFlower.id)) {
+                comboBonus += 0.5
+              }
+            })
+          }
+          
+          // Generate passive points if fully grown
+          if (newGrowth >= 100) {
+            const basePoints = flower.pointsPerHour / 60 // per minute
+            const totalPoints = basePoints * (1 + comboBonus)
+            passivePoints += totalPoints
+          }
+          
+          return {
+            ...plantedFlower,
+            growth: newGrowth,
+            healthBonus: comboBonus
+          }
+        })
+      })
+      
+      // Award passive points
+      if (passivePoints > 0.1) { // Only award if significant
+        setTotalPoints(current => current + Math.floor(passivePoints * 10) / 10)
+      }
+    }, 60000) // Every minute
+    
+    return () => clearInterval(interval)
+  }, [setPlantedFlowers, setTotalPoints])
+
+  const waterGarden = () => {
+    const today = new Date().toISOString().split('T')[0]
+    if (lastWateringDate === today) {
+      toast.error('Garten bereits heute gegossen! 💧')
+      return
+    }
+    
+    setLastWateringDate(today)
+    const wateringBonus = Math.floor(plantedFlowers.length * 0.5)
+    setTotalPoints(current => current + wateringBonus)
+    
+    toast.success('Garten gegossen! 🌿', {
+      description: `+${wateringBonus} Punkte für die Pflege deines Gartens!`,
+      duration: 3000,
+    })
   }
+
+  const checkAchievements = () => {
+    setAchievements(currentAchievements => {
+      return currentAchievements.map(achievement => {
+        if (achievement.unlocked) return achievement
+        
+        let shouldUnlock = false
+        
+        switch (achievement.requirement.type) {
+          case 'flowers_planted':
+            shouldUnlock = plantedFlowers.length >= achievement.requirement.count
+            break
+          case 'rare_flowers':
+            const rareCount = plantedFlowers.filter(pf => {
+              const flower = flowers.find(f => f.id === pf.flowerId)
+              return flower && ['rare', 'epic', 'legendary'].includes(flower.rarity)
+            }).length
+            shouldUnlock = rareCount >= achievement.requirement.count
+            break
+          case 'combo_bonus':
+            const combos = plantedFlowers.filter(pf => pf.healthBonus > 0).length
+            shouldUnlock = combos >= achievement.requirement.count
+            break
+          case 'garden_value':
+            const gardenValue = plantedFlowers.reduce((sum, pf) => {
+              const flower = flowers.find(f => f.id === pf.flowerId)
+              return sum + (flower ? flower.cost : 0)
+            }, 0)
+            shouldUnlock = gardenValue >= achievement.requirement.count
+            break
+        }
+        
+        if (shouldUnlock) {
+          setTotalPoints(current => current + achievement.reward)
+          toast.success(`Achievement erhalten! ${achievement.emoji}`, {
+            description: `${achievement.name}: +${achievement.reward} Punkte!`,
+            duration: 4000,
+          })
+          return { ...achievement, unlocked: true }
+        }
+        
+        return achievement
+      })
+    })
+  }
+
+  // Check achievements when garden changes
+  useEffect(() => {
+    checkAchievements()
+  }, [plantedFlowers])
 
   const addTodo = () => {
     if (!newTodoText.trim()) return
@@ -330,7 +549,10 @@ function App() {
       id: Date.now().toString(),
       flowerId: draggedFlower.id,
       x: clampedX,
-      y: clampedY
+      y: clampedY,
+      plantedAt: new Date(),
+      growth: 0,
+      healthBonus: 0
     }
 
     setPlantedFlowers(current => [...current, newPlantedFlower])
@@ -439,6 +661,41 @@ function App() {
       { name: 'Timer Sessions', value: timerSessions, color: '#8b5cf6' },
       { name: 'Aufgaben erledigt', value: taskSessions, color: '#06d6a0' }
     ]
+  }
+
+  const getRarityColor = (rarity: string) => {
+    switch (rarity) {
+      case 'common': return 'text-gray-600'
+      case 'rare': return 'text-blue-600'
+      case 'epic': return 'text-purple-600'
+      case 'legendary': return 'text-yellow-600'
+      default: return 'text-gray-600'
+    }
+  }
+
+  const getRarityBadge = (rarity: string) => {
+    switch (rarity) {
+      case 'common': return 'bg-gray-100 text-gray-800'
+      case 'rare': return 'bg-blue-100 text-blue-800'
+      case 'epic': return 'bg-purple-100 text-purple-800'
+      case 'legendary': return 'bg-yellow-100 text-yellow-800'
+      default: return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const getGardenStats = () => {
+    const totalValue = plantedFlowers.reduce((sum, pf) => {
+      const flower = flowers.find(f => f.id === pf.flowerId)
+      return sum + (flower ? flower.cost : 0)
+    }, 0)
+    
+    const passiveIncome = plantedFlowers.reduce((sum, pf) => {
+      const flower = flowers.find(f => f.id === pf.flowerId)
+      if (!flower || pf.growth < 100) return sum
+      return sum + flower.pointsPerHour * (1 + pf.healthBonus)
+    }, 0)
+    
+    return { totalValue, passiveIncome }
   }
 
   const pendingTodos = todos.filter(todo => !todo.completed)
@@ -719,6 +976,102 @@ function App() {
 
           {/* Garden Tab */}
           <TabsContent value="garden" className="space-y-6">
+            {/* Garden Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center space-x-2">
+                    <Flower className="w-5 h-5 text-primary" />
+                    <div>
+                      <p className="text-2xl font-bold">{plantedFlowers.length}</p>
+                      <p className="text-xs text-muted-foreground">Gepflanzte Blumen</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center space-x-2">
+                    <Trophy className="w-5 h-5 text-accent" />
+                    <div>
+                      <p className="text-2xl font-bold">{getGardenStats().totalValue}</p>
+                      <p className="text-xs text-muted-foreground">Gartenwert</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center space-x-2">
+                    <TrendUp className="w-5 h-5 text-secondary" />
+                    <div>
+                      <p className="text-2xl font-bold">{getGardenStats().passiveIncome.toFixed(1)}/h</p>
+                      <p className="text-xs text-muted-foreground">Passive Punkte</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Daily Garden Care */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span className="flex items-center gap-2">
+                    💧 Garten gießen
+                  </span>
+                  <Button
+                    onClick={waterGarden}
+                    disabled={lastWateringDate === new Date().toISOString().split('T')[0]}
+                    variant={lastWateringDate === new Date().toISOString().split('T')[0] ? "secondary" : "default"}
+                  >
+                    {lastWateringDate === new Date().toISOString().split('T')[0] ? '✓ Gegossen' : '💧 Gießen'}
+                  </Button>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Gieße deinen Garten täglich für Bonus-Punkte! ({Math.floor(plantedFlowers.length * 0.5)} Punkte heute)
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Achievements */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  🏆 Garten-Achievements
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {achievements.map(achievement => (
+                    <div
+                      key={achievement.id}
+                      className={`p-3 border rounded-lg flex items-center gap-3 ${
+                        achievement.unlocked 
+                          ? 'bg-secondary/20 border-secondary' 
+                          : 'bg-muted/30'
+                      }`}
+                    >
+                      <div className="text-2xl">{achievement.emoji}</div>
+                      <div className="flex-1">
+                        <p className={`font-medium ${achievement.unlocked ? 'text-secondary' : 'text-foreground'}`}>
+                          {achievement.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">{achievement.description}</p>
+                      </div>
+                      <Badge variant={achievement.unlocked ? "secondary" : "outline"}>
+                        +{achievement.reward}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Flower Shop */}
             <Card>
               <CardHeader>
@@ -739,7 +1092,13 @@ function App() {
                       <div className={`text-4xl mb-2 ${flower.size === 'large' ? 'text-5xl' : flower.size === 'medium' ? 'text-4xl' : 'text-3xl'}`}>
                         {flower.emoji}
                       </div>
-                      <span className="text-sm font-medium text-center mb-2">{flower.name}</span>
+                      <span className="text-sm font-medium text-center mb-1">{flower.name}</span>
+                      <Badge className={`text-xs mb-2 ${getRarityBadge(flower.rarity)}`}>
+                        {flower.rarity}
+                      </Badge>
+                      <div className="text-xs text-muted-foreground mb-2 text-center">
+                        🕒 {flower.growthTime}h | ⚡ {flower.pointsPerHour}/h
+                      </div>
                       <Badge 
                         variant={totalPoints >= flower.cost ? "default" : "secondary"}
                         className="mb-2"
@@ -758,7 +1117,7 @@ function App() {
                   ))}
                 </div>
                 <p className="text-sm text-muted-foreground mt-4 text-center">
-                  💡 Ziehe Blumen per Drag & Drop in deinen Garten!
+                  💡 Ziehe Blumen per Drag & Drop in deinen Garten! • 🌟 Seltene Blumen haben bessere Boni • ✨ Kombiniere passende Blumen für Synergien
                 </p>
               </CardContent>
             </Card>
@@ -823,11 +1182,34 @@ function App() {
                         }}
                         onClick={() => removeFlowerFromGarden(plantedFlower.id)}
                       >
-                        <div className={`${flower.size === 'large' ? 'text-4xl' : flower.size === 'medium' ? 'text-3xl' : 'text-2xl'}`}>
+                        {/* Growth indicator */}
+                        <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-white"
+                             style={{ 
+                               backgroundColor: plantedFlower.growth < 100 ? '#fbbf24' : '#10b981'
+                             }}
+                        />
+                        
+                        {/* Combo bonus indicator */}
+                        {plantedFlower.healthBonus > 0 && (
+                          <div className="absolute -top-1 -left-1 text-xs">✨</div>
+                        )}
+                        
+                        <div className={`${flower.size === 'large' ? 'text-4xl' : flower.size === 'medium' ? 'text-3xl' : 'text-2xl'}`}
+                             style={{
+                               filter: plantedFlower.growth < 100 ? 'grayscale(50%)' : 'none',
+                               opacity: plantedFlower.growth < 30 ? 0.5 : 1
+                             }}>
                           {flower.emoji}
                         </div>
-                        <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-black/70 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                          {flower.name} (Klicken zum Entfernen)
+                        
+                        {/* Enhanced tooltip */}
+                        <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-black/80 text-white text-xs px-3 py-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                          <div className="font-medium">{flower.name}</div>
+                          <div>Wachstum: {Math.floor(plantedFlower.growth)}%</div>
+                          {plantedFlower.healthBonus > 0 && (
+                            <div className="text-green-300">Bonus: +{(plantedFlower.healthBonus * 100).toFixed(0)}%</div>
+                          )}
+                          <div className="text-xs opacity-75">Klicken zum Entfernen</div>
                         </div>
                       </div>
                     )
