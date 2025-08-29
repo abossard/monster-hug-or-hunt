@@ -75,6 +75,7 @@ interface DailyStats {
 }
 
 const flowers: Flower[] = [
+  // Blumen
   { 
     id: 'daisy', name: 'Gänseblümchen', cost: 5, emoji: '🌼', color: '#ffffff', size: 'small',
     rarity: 'common', growthTime: 2, pointsPerHour: 0.5, comboBonus: ['tulip', 'sunflower']
@@ -110,6 +111,156 @@ const flowers: Flower[] = [
   { 
     id: 'phoenix', name: 'Phoenix-Blume', cost: 100, emoji: '🔥', color: '#ff4500', size: 'large',
     rarity: 'legendary', growthTime: 48, pointsPerHour: 15, comboBonus: ['lotus', 'orchid']
+  },
+  
+  // Obst
+  { 
+    id: 'apple', name: 'Apfelbaum', cost: 18, emoji: '🍎', color: '#ff0000', size: 'large',
+    rarity: 'common', growthTime: 8, pointsPerHour: 1.8, comboBonus: ['cherry_tree', 'pear']
+  },
+  { 
+    id: 'cherry_tree', name: 'Kirschbaum', cost: 22, emoji: '🍒', color: '#dc143c', size: 'large',
+    rarity: 'rare', growthTime: 10, pointsPerHour: 2.2, comboBonus: ['apple', 'peach']
+  },
+  { 
+    id: 'pear', name: 'Birnenbaum', cost: 16, emoji: '🍐', color: '#90ee90', size: 'large',
+    rarity: 'common', growthTime: 7, pointsPerHour: 1.6, comboBonus: ['apple', 'grape']
+  },
+  { 
+    id: 'peach', name: 'Pfirsichbaum', cost: 25, emoji: '🍑', color: '#ffb347', size: 'large',
+    rarity: 'rare', growthTime: 12, pointsPerHour: 2.8, comboBonus: ['cherry_tree', 'plum']
+  },
+  { 
+    id: 'grape', name: 'Weinrebe', cost: 35, emoji: '🍇', color: '#800080', size: 'medium',
+    rarity: 'epic', growthTime: 15, pointsPerHour: 4.5, comboBonus: ['pear', 'strawberry']
+  },
+  { 
+    id: 'strawberry', name: 'Erdbeeren', cost: 14, emoji: '🍓', color: '#ff1493', size: 'small',
+    rarity: 'common', growthTime: 5, pointsPerHour: 1.4, comboBonus: ['grape', 'blueberry']
+  },
+  { 
+    id: 'blueberry', name: 'Heidelbeeren', cost: 19, emoji: '🫐', color: '#4169e1', size: 'small',
+    rarity: 'rare', growthTime: 6, pointsPerHour: 2.1, comboBonus: ['strawberry', 'raspberry']
+  },
+  { 
+    id: 'raspberry', name: 'Himbeeren', cost: 17, emoji: '🍰', color: '#e30b5c', size: 'small',
+    rarity: 'common', growthTime: 5, pointsPerHour: 1.7, comboBonus: ['blueberry', 'strawberry']
+  },
+  { 
+    id: 'mango', name: 'Mangobaum', cost: 45, emoji: '🥭', color: '#ffa500', size: 'large',
+    rarity: 'epic', growthTime: 20, pointsPerHour: 5.5, comboBonus: ['coconut', 'pineapple']
+  },
+  { 
+    id: 'coconut', name: 'Kokospalme', cost: 60, emoji: '🥥', color: '#8b4513', size: 'large',
+    rarity: 'legendary', growthTime: 30, pointsPerHour: 8, comboBonus: ['mango', 'pineapple']
+  },
+  { 
+    id: 'pineapple', name: 'Ananas', cost: 50, emoji: '🍍', color: '#ffd700', size: 'medium',
+    rarity: 'epic', growthTime: 18, pointsPerHour: 6, comboBonus: ['mango', 'coconut']
+  },
+  
+  // Gemüse
+  { 
+    id: 'carrot', name: 'Karotten', cost: 10, emoji: '🥕', color: '#ff8c00', size: 'small',
+    rarity: 'common', growthTime: 3, pointsPerHour: 1, comboBonus: ['potato', 'radish']
+  },
+  { 
+    id: 'potato', name: 'Kartoffeln', cost: 12, emoji: '🥔', color: '#deb887', size: 'small',
+    rarity: 'common', growthTime: 4, pointsPerHour: 1.2, comboBonus: ['carrot', 'onion']
+  },
+  { 
+    id: 'tomato', name: 'Tomaten', cost: 15, emoji: '🍅', color: '#ff6347', size: 'medium',
+    rarity: 'common', growthTime: 6, pointsPerHour: 1.8, comboBonus: ['bell_pepper', 'eggplant']
+  },
+  { 
+    id: 'bell_pepper', name: 'Paprika', cost: 18, emoji: '🫑', color: '#32cd32', size: 'medium',
+    rarity: 'rare', growthTime: 7, pointsPerHour: 2.2, comboBonus: ['tomato', 'chili']
+  },
+  { 
+    id: 'eggplant', name: 'Aubergine', cost: 20, emoji: '🍆', color: '#800080', size: 'medium',
+    rarity: 'rare', growthTime: 8, pointsPerHour: 2.5, comboBonus: ['tomato', 'zucchini']
+  },
+  { 
+    id: 'corn', name: 'Mais', cost: 22, emoji: '🌽', color: '#ffd700', size: 'large',
+    rarity: 'rare', growthTime: 9, pointsPerHour: 2.8, comboBonus: ['pumpkin', 'cucumber']
+  },
+  { 
+    id: 'pumpkin', name: 'Kürbis', cost: 28, emoji: '🎃', color: '#ff8c00', size: 'large',
+    rarity: 'epic', growthTime: 12, pointsPerHour: 3.5, comboBonus: ['corn', 'squash']
+  },
+  { 
+    id: 'cucumber', name: 'Gurken', cost: 16, emoji: '🥒', color: '#90ee90', size: 'medium',
+    rarity: 'common', growthTime: 5, pointsPerHour: 1.6, comboBonus: ['corn', 'zucchini']
+  },
+  { 
+    id: 'zucchini', name: 'Zucchini', cost: 19, emoji: '🥒', color: '#228b22', size: 'medium',
+    rarity: 'rare', growthTime: 6, pointsPerHour: 2.1, comboBonus: ['eggplant', 'cucumber']
+  },
+  { 
+    id: 'lettuce', name: 'Salat', cost: 8, emoji: '🥬', color: '#90ee90', size: 'small',
+    rarity: 'common', growthTime: 2, pointsPerHour: 0.8, comboBonus: ['spinach', 'cabbage']
+  },
+  { 
+    id: 'spinach', name: 'Spinat', cost: 11, emoji: '🥬', color: '#006400', size: 'small',
+    rarity: 'common', growthTime: 3, pointsPerHour: 1.1, comboBonus: ['lettuce', 'kale']
+  },
+  { 
+    id: 'cabbage', name: 'Kohl', cost: 14, emoji: '🥬', color: '#90ee90', size: 'medium',
+    rarity: 'common', growthTime: 5, pointsPerHour: 1.4, comboBonus: ['lettuce', 'broccoli']
+  },
+  { 
+    id: 'broccoli', name: 'Brokkoli', cost: 17, emoji: '🥦', color: '#228b22', size: 'medium',
+    rarity: 'rare', growthTime: 6, pointsPerHour: 2, comboBonus: ['cabbage', 'cauliflower']
+  },
+  { 
+    id: 'cauliflower', name: 'Blumenkohl', cost: 19, emoji: '🥬', color: '#f5f5dc', size: 'medium',
+    rarity: 'rare', growthTime: 7, pointsPerHour: 2.3, comboBonus: ['broccoli', 'radish']
+  },
+  { 
+    id: 'radish', name: 'Rettich', cost: 9, emoji: '🥬', color: '#ff69b4', size: 'small',
+    rarity: 'common', growthTime: 2, pointsPerHour: 0.9, comboBonus: ['carrot', 'cauliflower']
+  },
+  { 
+    id: 'onion', name: 'Zwiebeln', cost: 13, emoji: '🧅', color: '#dda0dd', size: 'small',
+    rarity: 'common', growthTime: 4, pointsPerHour: 1.3, comboBonus: ['potato', 'garlic']
+  },
+  { 
+    id: 'garlic', name: 'Knoblauch', cost: 15, emoji: '🧄', color: '#f5f5dc', size: 'small',
+    rarity: 'rare', growthTime: 5, pointsPerHour: 1.8, comboBonus: ['onion', 'herbs']
+  },
+  { 
+    id: 'chili', name: 'Chili', cost: 24, emoji: '🌶️', color: '#ff0000', size: 'small',
+    rarity: 'epic', growthTime: 8, pointsPerHour: 3.2, comboBonus: ['bell_pepper', 'herbs']
+  },
+  
+  // Kräuter & Spezialitäten
+  { 
+    id: 'herbs', name: 'Kräutergarten', cost: 26, emoji: '🌿', color: '#90ee90', size: 'medium',
+    rarity: 'epic', growthTime: 10, pointsPerHour: 3.8, comboBonus: ['garlic', 'chili']
+  },
+  { 
+    id: 'mushroom', name: 'Pilze', cost: 32, emoji: '🍄', color: '#8b4513', size: 'small',
+    rarity: 'epic', growthTime: 14, pointsPerHour: 4.2, comboBonus: ['truffle', 'herbs']
+  },
+  { 
+    id: 'truffle', name: 'Trüffel', cost: 80, emoji: '🍄', color: '#2f4f4f', size: 'small',
+    rarity: 'legendary', growthTime: 36, pointsPerHour: 12, comboBonus: ['mushroom', 'herbs']
+  },
+  { 
+    id: 'bamboo', name: 'Bambus', cost: 38, emoji: '🎋', color: '#90ee90', size: 'large',
+    rarity: 'epic', growthTime: 16, pointsPerHour: 4.8, comboBonus: ['herbs', 'tea']
+  },
+  { 
+    id: 'tea', name: 'Tee-Strauch', cost: 42, emoji: '🍃', color: '#90ee90', size: 'medium',
+    rarity: 'epic', growthTime: 18, pointsPerHour: 5.2, comboBonus: ['bamboo', 'herbs']
+  },
+  { 
+    id: 'cactus', name: 'Kaktus', cost: 35, emoji: '🌵', color: '#90ee90', size: 'medium',
+    rarity: 'epic', growthTime: 24, pointsPerHour: 4, comboBonus: [] // Kaktus ist unabhängig
+  },
+  { 
+    id: 'bonsai', name: 'Bonsai-Baum', cost: 120, emoji: '🌳', color: '#228b22', size: 'small',
+    rarity: 'legendary', growthTime: 72, pointsPerHour: 18, comboBonus: ['bamboo', 'tea']
   }
 ]
 
@@ -117,7 +268,7 @@ const gardenAchievements: GardenAchievement[] = [
   {
     id: 'first_flower',
     name: 'Erster Spross',
-    description: 'Pflanze deine erste Blume',
+    description: 'Pflanze deine erste Pflanze',
     emoji: '🌱',
     requirement: { type: 'flowers_planted', count: 1 },
     reward: 5,
@@ -125,8 +276,8 @@ const gardenAchievements: GardenAchievement[] = [
   },
   {
     id: 'flower_collector',
-    name: 'Blumen-Sammler',
-    description: 'Pflanze 10 verschiedene Blumen',
+    name: 'Pflanzen-Sammler',
+    description: 'Pflanze 10 verschiedene Pflanzen',
     emoji: '🌸',
     requirement: { type: 'flowers_planted', count: 10 },
     reward: 15,
@@ -135,7 +286,7 @@ const gardenAchievements: GardenAchievement[] = [
   {
     id: 'rare_gardener',
     name: 'Seltener Gärtner',
-    description: 'Sammle 3 seltene oder bessere Blumen',
+    description: 'Sammle 3 seltene oder bessere Pflanzen',
     emoji: '💎',
     requirement: { type: 'rare_flowers', count: 3 },
     reward: 25,
@@ -144,7 +295,7 @@ const gardenAchievements: GardenAchievement[] = [
   {
     id: 'combo_master',
     name: 'Combo-Meister',
-    description: 'Erstelle 5 Blumen-Kombinationen',
+    description: 'Erstelle 5 Pflanzen-Kombinationen',
     emoji: '⚡',
     requirement: { type: 'combo_bonus', count: 5 },
     reward: 30,
@@ -201,6 +352,10 @@ function App() {
   const [lastWateringDate, setLastWateringDate] = useKV<string>('last-watering-date', '')
   const [draggedFlower, setDraggedFlower] = useState<Flower | null>(null)
   
+  // Gardener state
+  const [gardenerPosition, setGardenerPosition] = useState({ x: 50, y: 80 })
+  const [gardenerDirection, setGardenerDirection] = useState(1) // 1 for right, -1 for left
+  
   // Timer state
   const [timerMinutes, setTimerMinutes] = useState('25')
   const [timeLeft, setTimeLeft] = useState(0) // in seconds
@@ -208,6 +363,34 @@ function App() {
   const [isTimerPaused, setIsTimerPaused] = useState(false)
   const timerRef = useRef<NodeJS.Timeout | null>(null)
   const audioContextRef = useRef<AudioContext | null>(null)
+
+  // Gardener animation effect
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setGardenerPosition(prev => {
+        let newX = prev.x + (gardenerDirection * 0.5)
+        let newDirection = gardenerDirection
+        
+        // Bounce off walls
+        if (newX >= 95) {
+          newX = 95
+          newDirection = -1
+          setGardenerDirection(-1)
+        } else if (newX <= 5) {
+          newX = 5
+          newDirection = 1
+          setGardenerDirection(1)
+        }
+        
+        // Random Y movement
+        const newY = Math.max(75, Math.min(90, prev.y + (Math.random() - 0.5) * 2))
+        
+        return { x: newX, y: newY }
+      })
+    }, 100) // Update every 100ms for smooth animation
+    
+    return () => clearInterval(interval)
+  }, [gardenerDirection])
 
   // Initialize audio context
   useEffect(() => {
@@ -515,16 +698,16 @@ function App() {
     setTodos(currentTodos => currentTodos.filter(todo => todo.id !== todoId))
   }
 
-  const buyFlower = (flower: Flower) => {
-    if (totalPoints >= flower.cost) {
-      setTotalPoints(current => current - flower.cost)
-      toast.success(`${flower.name} gekauft! 🌸`, {
-        description: `Du kannst sie jetzt in deinen Garten pflanzen!`,
+  const buyPlant = (plant: Flower) => {
+    if (totalPoints >= plant.cost) {
+      setTotalPoints(current => current - plant.cost)
+      toast.success(`${plant.name} gekauft! 🌱`, {
+        description: `Du kannst es jetzt in deinen Garten pflanzen!`,
         duration: 3000,
       })
     } else {
       toast.error('Nicht genug Punkte!', {
-        description: `Du brauchst ${flower.cost - totalPoints} weitere Punkte.`,
+        description: `Du brauchst ${plant.cost - totalPoints} weitere Punkte.`,
         duration: 3000,
       })
     }
@@ -539,7 +722,7 @@ function App() {
     if (!draggedFlower) return
 
     if (totalPoints < draggedFlower.cost) {
-      toast.error('Nicht genug Punkte für diese Blume!')
+      toast.error('Nicht genug Punkte für diese Pflanze!')
       setDraggedFlower(null)
       return
     }
@@ -583,7 +766,7 @@ function App() {
   const resetGarden = () => {
     setPlantedFlowers([])
     toast.success('Garten zurückgesetzt! 🌱', {
-      description: 'Dein Garten ist jetzt bereit für neue Blumen!',
+      description: 'Dein Garten ist jetzt bereit für neue Pflanzen!',
       duration: 3000,
     })
   }
@@ -991,7 +1174,7 @@ function App() {
                     <Flower className="w-5 h-5 text-primary" />
                     <div>
                       <p className="text-2xl font-bold">{plantedFlowers.length}</p>
-                      <p className="text-xs text-muted-foreground">Gepflanzte Blumen</p>
+                      <p className="text-xs text-muted-foreground">Gepflanzte Pflanzen</p>
                     </div>
                   </div>
                 </CardContent>
@@ -1079,44 +1262,47 @@ function App() {
               </CardContent>
             </Card>
 
-            {/* Flower Shop */}
+            {/* Garden Shop */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <ShoppingCart className="w-5 h-5" />
-                  Blumenladen
+                  Garten-Shop
                 </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  🌸 Blumen • 🍎 Obst • 🥕 Gemüse • 🌿 Kräuter & mehr
+                </p>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
                   {flowers.map(flower => (
                     <div
                       key={flower.id}
-                      className="flex flex-col items-center p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                      className="flex flex-col items-center p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
                       draggable
                       onDragStart={() => handleDragStart(flower)}
                     >
-                      <div className={`text-4xl mb-2 ${flower.size === 'large' ? 'text-5xl' : flower.size === 'medium' ? 'text-4xl' : 'text-3xl'}`}>
+                      <div className={`mb-1 ${flower.size === 'large' ? 'text-3xl' : flower.size === 'medium' ? 'text-2xl' : 'text-xl'}`}>
                         {flower.emoji}
                       </div>
-                      <span className="text-sm font-medium text-center mb-1">{flower.name}</span>
-                      <Badge className={`text-xs mb-2 ${getRarityBadge(flower.rarity)}`}>
+                      <span className="text-xs font-medium text-center mb-1 leading-tight">{flower.name}</span>
+                      <Badge className={`text-xs mb-1 ${getRarityBadge(flower.rarity)}`}>
                         {flower.rarity}
                       </Badge>
-                      <div className="text-xs text-muted-foreground mb-2 text-center">
+                      <div className="text-xs text-muted-foreground mb-1 text-center">
                         🕒 {flower.growthTime}h | ⚡ {flower.pointsPerHour}/h
                       </div>
                       <Badge 
                         variant={totalPoints >= flower.cost ? "default" : "secondary"}
-                        className="mb-2"
+                        className="mb-1 text-xs"
                       >
-                        {flower.cost} Punkte
+                        {flower.cost} P
                       </Badge>
                       <Button
                         size="sm"
-                        onClick={() => buyFlower(flower)}
+                        onClick={() => buyPlant(flower)}
                         disabled={totalPoints < flower.cost}
-                        className="w-full"
+                        className="w-full text-xs py-1 h-6"
                       >
                         Kaufen
                       </Button>
@@ -1124,7 +1310,7 @@ function App() {
                   ))}
                 </div>
                 <p className="text-sm text-muted-foreground mt-4 text-center">
-                  💡 Ziehe Blumen per Drag & Drop in deinen Garten! • 🌟 Seltene Blumen haben bessere Boni • ✨ Kombiniere passende Blumen für Synergien
+                  💡 Ziehe Pflanzen per Drag & Drop in deinen Garten! • 🌟 Seltene Sorten haben bessere Boni • ✨ Kombiniere passende Pflanzen für Synergien
                 </p>
               </CardContent>
             </Card>
@@ -1222,13 +1408,31 @@ function App() {
                     )
                   })}
                   
+                  {/* Walking Gardener */}
+                  <div
+                    className="absolute transition-all duration-100 ease-linear z-20"
+                    style={{
+                      left: `${gardenerPosition.x}%`,
+                      top: `${gardenerPosition.y}%`,
+                      transform: `translate(-50%, -50%) scaleX(${gardenerDirection})`,
+                    }}
+                  >
+                    <div className="text-2xl hover:scale-110 transition-transform cursor-pointer"
+                         title="Die fleißige Gärtnerin kümmert sich um deinen Garten! 👩‍🌾">
+                      👩‍🌾
+                    </div>
+                    {/* Gardener's shadow */}
+                    <div className="absolute top-6 left-1/2 transform -translate-x-1/2 w-4 h-2 bg-black/20 rounded-full"></div>
+                  </div>
+                  
                   {/* Empty state message */}
                   {plantedFlowers.length === 0 && (
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="text-center text-white bg-black/50 p-6 rounded-lg">
                         <Flower className="w-12 h-12 mx-auto mb-2 opacity-70" />
                         <p className="text-lg font-medium mb-1">Dein Garten wartet auf dich!</p>
-                        <p className="text-sm opacity-80">Ziehe Blumen hierher, um sie zu pflanzen</p>
+                        <p className="text-sm opacity-80">Ziehe Pflanzen hierher, um sie zu pflanzen</p>
+                        <p className="text-xs opacity-60 mt-1">Die Gärtnerin hilft dir beim Pflegen! 👩‍🌾</p>
                       </div>
                     </div>
                   )}
@@ -1236,7 +1440,7 @@ function App() {
                 
                 {plantedFlowers.length > 0 && (
                   <p className="text-sm text-muted-foreground mt-4 text-center">
-                    🌸 Du hast {plantedFlowers.length} {plantedFlowers.length === 1 ? 'Blume' : 'Blumen'} in deinem Garten!
+                    🌱 Du hast {plantedFlowers.length} {plantedFlowers.length === 1 ? 'Pflanze' : 'Pflanzen'} in deinem Garten! Die Gärtnerin kümmert sich um sie. 👩‍🌾
                   </p>
                 )}
               </CardContent>
