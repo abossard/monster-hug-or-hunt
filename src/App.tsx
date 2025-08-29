@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Plus, Trophy, Target, CheckCircle, Play, Pause, Square, Clock, Flower, ShoppingCart } from '@phosphor-icons/react'
+import { Plus, Trophy, Target, CheckCircle, Play, Pause, Square, Clock, Flower, ShoppingCart, Trash } from '@phosphor-icons/react'
 import { useKV } from '@github/spark/hooks'
 import { toast } from 'sonner'
 
@@ -274,6 +274,14 @@ function App() {
 
   const removeFlowerFromGarden = (plantedFlowerId: string) => {
     setPlantedFlowers(current => current.filter(flower => flower.id !== plantedFlowerId))
+  }
+
+  const resetGarden = () => {
+    setPlantedFlowers([])
+    toast.success('Garten zurückgesetzt! 🌱', {
+      description: 'Dein Garten ist jetzt bereit für neue Blumen!',
+      duration: 3000,
+    })
   }
 
   const pendingTodos = todos.filter(todo => !todo.completed)
@@ -590,10 +598,23 @@ function App() {
             {/* Garden */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Flower className="w-5 h-5" />
-                  Mein Garten
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Flower className="w-5 h-5" />
+                    Mein Garten
+                  </CardTitle>
+                  {plantedFlowers.length > 0 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={resetGarden}
+                      className="text-destructive hover:text-destructive-foreground hover:bg-destructive"
+                    >
+                      <Trash className="w-4 h-4 mr-2" />
+                      Garten zurücksetzen
+                    </Button>
+                  )}
+                </div>
               </CardHeader>
               <CardContent>
                 <div
