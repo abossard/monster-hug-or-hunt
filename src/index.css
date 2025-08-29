@@ -8,30 +8,30 @@
 }
 
 :root {
-  --background: oklch(0.7 0.15 300);
-  --foreground: oklch(1 0 0);
+  --background: oklch(0.98 0.02 240);
+  --foreground: oklch(0.15 0.1 240);
 
-  --card: oklch(0.75 0.12 300);
-  --card-foreground: oklch(1 0 0);
-  --popover: oklch(0.75 0.12 300);
-  --popover-foreground: oklch(1 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.15 0.1 240);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.15 0.1 240);
 
-  --primary: oklch(0.7 0.15 300);
+  --primary: oklch(0.45 0.15 240);
   --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.8 0.12 350);
-  --secondary-foreground: oklch(0.2 0.1 300);
-  --accent: oklch(0.85 0.15 80);
-  --accent-foreground: oklch(0.2 0.1 300);
+  --secondary: oklch(0.6 0.12 150);
+  --secondary-foreground: oklch(0.15 0.1 240);
+  --accent: oklch(0.75 0.15 60);
+  --accent-foreground: oklch(0.15 0.1 240);
   --destructive: oklch(0.5 0.2 20);
   --destructive-foreground: oklch(1 0 0);
 
-  --muted: oklch(0.75 0.1 300);
-  --muted-foreground: oklch(0.95 0.05 300);
-  --border: oklch(0.8 0.1 300);
-  --input: oklch(0.8 0.1 300);
-  --ring: oklch(0.85 0.15 80);
+  --muted: oklch(0.95 0.02 240);
+  --muted-foreground: oklch(0.45 0.05 240);
+  --border: oklch(0.9 0.03 240);
+  --input: oklch(0.9 0.03 240);
+  --ring: oklch(0.45 0.15 240);
 
-  --radius: 0.75rem;
+  --radius: 0.5rem;
 }
 
 @theme {
@@ -69,67 +69,40 @@ body {
   color: var(--foreground);
 }
 
-.game-title {
-  font-family: 'Fredoka One', cursive;
+.task-complete-animation {
+  animation: taskComplete 0.6s ease-out;
 }
 
-.monster-enter {
-  animation: monsterBounce 0.5s ease-out;
+.points-gained-animation {
+  animation: pointsGained 0.8s ease-out;
 }
 
-.monster-exit {
-  animation: monsterFadeOut 0.3s ease-in;
-}
-
-.timer-pulse {
-  animation: timerPulse 1s ease-in-out infinite;
-}
-
-.timer-danger {
-  animation: timerDanger 0.5s ease-in-out infinite;
-}
-
-@keyframes monsterBounce {
-  0% {
-    transform: scale(0.3) translateY(50px);
-    opacity: 0;
-  }
-  50% {
-    transform: scale(1.1) translateY(-10px);
-  }
-  100% {
-    transform: scale(1) translateY(0);
-    opacity: 1;
-  }
-}
-
-@keyframes monsterFadeOut {
+@keyframes taskComplete {
   0% {
     transform: scale(1);
     opacity: 1;
-  }
-  100% {
-    transform: scale(0.8);
-    opacity: 0;
-  }
-}
-
-@keyframes timerPulse {
-  0%, 100% {
-    transform: scale(1);
   }
   50% {
     transform: scale(1.05);
+    background-color: var(--secondary);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.7;
   }
 }
 
-@keyframes timerDanger {
-  0%, 100% {
-    background-color: var(--destructive);
-    transform: scale(1);
+@keyframes pointsGained {
+  0% {
+    transform: scale(1) translateY(0);
+    opacity: 0;
   }
   50% {
-    background-color: oklch(0.6 0.25 20);
-    transform: scale(1.1);
+    transform: scale(1.2) translateY(-10px);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) translateY(-20px);
+    opacity: 0;
   }
 }

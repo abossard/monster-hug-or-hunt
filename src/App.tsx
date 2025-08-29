@@ -1,259 +1,253 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { Progress } from '@/components/ui/progress'
-import { Heart, X } from '@phosphor-icons/react'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Plus, Trophy, Target, CheckCircle } from '@phosphor-icons/react'
 import { useKV } from '@github/spark/hooks'
+import { toast } from 'sonner'
 
-interface Monster {
+interface Todo {
   id: number
-  type: 'cute' | 'ugly'
-  emoji: string
+  text: string
+  points: number
+  completed: boolean
+  createdAt: Date
 }
 
-const CUTE_MONSTERS = ['🥰', '😇', '🤗', '😊', '🥳', '😍', '🤩', '😘']
-const UGLY_MONSTERS = ['👹', '👺', '💀', '☠️', '🧟', '🧛', '😈', '👿']
-
-const GAME_DURATION = 2000 // 2 seconds
+const motivationalMessages = [
+  "Großartig! Du machst echte Fortschritte! 🎉",
+  "Super gemacht! Weiter so! ⭐",
+  "Fantastisch! Du bist auf dem richtigen Weg! 🚀",
+  "Excellent! Dein Fleiß zahlt sich aus! 💪",
+  "Perfekt! Du rockst dein Studium! 🎯",
+  "Bravo! Schritt für Schritt zum Erfolg! 🏆",
+  "Wunderbar! Du bist unstoppable! ✨",
+  "Klasse! Deine Disziplin beeindruckt! 🌟"
+]
 
 function App() {
-  const [currentMonster, setCurrentMonster] = useState<Monster | null>(null)
-  const [score, setScore] = useKV('monster-game-score', 0)
-  const [highScore, setHighScore] = useKV('monster-game-high-score', 0)
-  const [gameState, setGameState] = useState<'waiting' | 'playing' | 'gameOver'>('waiting')
-  const [timeLeft, setTimeLeft] = useState(GAME_DURATION)
-  const [isAnimating, setIsAnimating] = useState(false)
-  const [lastDecision, setLastDecision] = useState<'correct' | 'wrong' | null>(null)
-  
-  const gameTimerRef = useRef<NodeJS.Timeout>()
-  const progressTimerRef = useRef<NodeJS.Timeout>()
+  const [newTodoText, setNewTodoText] = useState('')
+  const [newTodoPoints, setNewTodoPoints] = useState('1')
+  const [todos, setTodos] = useKV<Todo[]>('study-todos', [])
+  const [totalPoints, setTotalPoints] = useKV<number>('study-total-points', 0)
 
-  const generateMonster = (): Monster => {
-    const isCute = Math.random() > 0.5
-    const monsterList = isCute ? CUTE_MONSTERS : UGLY_MONSTERS
-    const emoji = monsterList[Math.floor(Math.random() * monsterList.length)]
-    
-    const monster = {
+  const addTodo = () => {
+    if (!newTodoText.trim()) return
+
+    const newTodo: Todo = {
       id: Date.now(),
-      type: isCute ? 'cute' : 'ugly',
-      emoji
+      text: newTodoText.trim(),
+      points: parseInt(newTodoPoints),
+      completed: false,
+      createdAt: new Date()
     }
-    
-    console.log('Generated monster:', monster)
-    return monster
+
+    setTodos(currentTodos => [...currentTodos, newTodo])
+    setNewTodoText('')
+    setNewTodoPoints('1')
   }
 
-  const startGame = () => {
-    setScore(0)
-    setGameState('playing')
-    spawnNextMonster()
+  const completeTodo = (todoId: number) => {
+    setTodos(currentTodos => {
+      const updatedTodos = currentTodos.map(todo => {
+        if (todo.id === todoId && !todo.completed) {
+          // Add points when completing the task
+          setTotalPoints(currentPoints => currentPoints + todo.points)
+          
+          // Show motivational message
+          const randomMessage = motivationalMessages[Math.floor(Math.random() * motivationalMessages.length)]
+          toast.success(randomMessage, {
+            description: `+${todo.points} Punkte erhalten!`,
+            duration: 3000,
+          })
+
+          return { ...todo, completed: true }
+        }
+        return todo
+      })
+      return updatedTodos
+    })
   }
 
-  const spawnNextMonster = () => {
-    setIsAnimating(true)
-    setCurrentMonster(null)
-    setLastDecision(null)
-    
-    setTimeout(() => {
-      const monster = generateMonster()
-      setCurrentMonster(monster)
-      setTimeLeft(GAME_DURATION)
-      setIsAnimating(false)
-      startTimer()
-    }, 300)
+  const deleteTodo = (todoId: number) => {
+    setTodos(currentTodos => currentTodos.filter(todo => todo.id !== todoId))
   }
 
-  const startTimer = () => {
-    if (gameTimerRef.current) clearTimeout(gameTimerRef.current)
-    if (progressTimerRef.current) clearInterval(progressTimerRef.current)
+  const pendingTodos = todos.filter(todo => !todo.completed)
+  const completedTodos = todos.filter(todo => todo.completed)
 
-    const startTime = Date.now()
-    
-    progressTimerRef.current = setInterval(() => {
-      const elapsed = Date.now() - startTime
-      const remaining = Math.max(0, GAME_DURATION - elapsed)
-      setTimeLeft(remaining)
-      
-      if (remaining <= 0) {
-        gameOver()
-      }
-    }, 16) // ~60fps updates
-
-    gameTimerRef.current = setTimeout(() => {
-      gameOver()
-    }, GAME_DURATION)
-  }
-
-  const makeDecision = (decision: 'hug' | 'kill') => {
-    if (!currentMonster || gameState !== 'playing') return
-
-    clearTimeout(gameTimerRef.current!)
-    clearInterval(progressTimerRef.current!)
-
-    // Clear any previous decision feedback
-    setLastDecision(null)
-
-    // Check if decision is correct
-    const isCorrect = 
-      (decision === 'hug' && currentMonster.type === 'cute') ||
-      (decision === 'kill' && currentMonster.type === 'ugly')
-
-    console.log('Decision:', decision, 'Monster type:', currentMonster.type, 'Correct:', isCorrect)
-
-    if (isCorrect) {
-      setLastDecision('correct')
-      const newScore = score + 1
-      setScore(newScore)
-      if (newScore > highScore) {
-        setHighScore(newScore)
-      }
-      // Short delay to show feedback before next monster
-      setTimeout(() => {
-        spawnNextMonster()
-      }, 500)
-    } else {
-      setLastDecision('wrong')
-      // Short delay to show feedback before game over
-      setTimeout(() => {
-        gameOver()
-      }, 1000)
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      addTodo()
     }
   }
-
-  const gameOver = () => {
-    clearTimeout(gameTimerRef.current!)
-    clearInterval(progressTimerRef.current!)
-    setGameState('gameOver')
-    setCurrentMonster(null)
-  }
-
-  useEffect(() => {
-    return () => {
-      clearTimeout(gameTimerRef.current!)
-      clearInterval(progressTimerRef.current!)
-    }
-  }, [])
-
-  const progressPercentage = (timeLeft / GAME_DURATION) * 100
-  const isDangerZone = timeLeft < 500
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card className="w-full max-w-md p-8 space-y-6 text-center">
-        <div className="space-y-2">
-          <h1 className="game-title text-3xl font-bold text-foreground">
-            Monster Decision
+    <div className="min-h-screen bg-background p-6">
+      <div className="max-w-4xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="text-center space-y-2">
+          <h1 className="text-4xl font-bold text-foreground flex items-center justify-center gap-3">
+            <Target className="w-10 h-10 text-primary" />
+            Study Reward Tracker
           </h1>
-          <div className="flex justify-center gap-4">
-            <Badge variant="secondary" className="text-lg px-3 py-1">
-              Score: {score}
-            </Badge>
-            <Badge variant="outline" className="text-lg px-3 py-1">
-              Best: {highScore}
-            </Badge>
-          </div>
+          <p className="text-muted-foreground">
+            Belohne dich für jeden Lernfortschritt!
+          </p>
         </div>
 
-        {gameState === 'waiting' && (
-          <div className="space-y-6">
-            <div className="text-center space-y-4">
-              <div className="text-6xl">🎮</div>
-              <p className="text-foreground/80">
-                Quick! Hug the cute monsters and kill the ugly ones!
-              </p>
-              <p className="text-sm text-foreground/60">
-                You have 2 seconds to decide for each monster
-              </p>
+        {/* Points Display */}
+        <Card className="text-center">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-center gap-3 mb-2">
+              <Trophy className="w-8 h-8 text-accent" />
+              <span className="text-3xl font-bold text-primary">{totalPoints}</span>
+              <span className="text-xl text-muted-foreground">Punkte</span>
             </div>
-            <Button 
-              onClick={startGame}
-              size="lg" 
-              className="w-full text-lg font-semibold"
-            >
-              Start Game
-            </Button>
-          </div>
-        )}
+            <p className="text-sm text-muted-foreground">
+              Dein bisheriger Erfolg im Studium
+            </p>
+          </CardContent>
+        </Card>
 
-        {gameState === 'playing' && (
-          <div className="space-y-6">
-            <div className="relative">
-              <Progress 
-                value={progressPercentage} 
-                className={`h-3 ${isDangerZone ? 'timer-danger' : 'timer-pulse'}`}
+        {/* Add Todo */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Plus className="w-5 h-5" />
+              Neue Aufgabe hinzufügen
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-3">
+              <Input
+                placeholder="Was möchtest du heute lernen?"
+                value={newTodoText}
+                onChange={(e) => setNewTodoText(e.target.value)}
+                onKeyPress={handleKeyPress}
+                className="flex-1"
               />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-xs font-bold text-white drop-shadow">
-                  {Math.ceil(timeLeft / 1000)}s
-                </span>
-              </div>
+              <Select value={newTodoPoints} onValueChange={setNewTodoPoints}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(points => (
+                    <SelectItem key={points} value={points.toString()}>
+                      {points} {points === 1 ? 'Punkt' : 'Punkte'}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button onClick={addTodo} disabled={!newTodoText.trim()}>
+                <Plus className="w-4 h-4 mr-2" />
+                Hinzufügen
+              </Button>
             </div>
+          </CardContent>
+        </Card>
 
-            <div className="monster-display h-32 flex flex-col items-center justify-center">
-              {currentMonster && !lastDecision && (
+        {/* Pending Todos */}
+        {pendingTodos.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>Anstehende Aufgaben</span>
+                <Badge variant="secondary">
+                  {pendingTodos.length} {pendingTodos.length === 1 ? 'Aufgabe' : 'Aufgaben'}
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {pendingTodos.map(todo => (
                 <div 
-                  key={currentMonster.id}
-                  className={`text-8xl ${isAnimating ? 'monster-exit' : 'monster-enter'}`}
+                  key={todo.id} 
+                  className="flex items-center gap-3 p-4 border rounded-lg hover:bg-muted/50 transition-colors"
                 >
-                  {currentMonster.emoji}
+                  <Checkbox
+                    checked={false}
+                    onCheckedChange={() => completeTodo(todo.id)}
+                  />
+                  <span className="flex-1 text-foreground">{todo.text}</span>
+                  <Badge className="bg-accent text-accent-foreground">
+                    {todo.points} {todo.points === 1 ? 'Punkt' : 'Punkte'}
+                  </Badge>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => deleteTodo(todo.id)}
+                    className="text-muted-foreground hover:text-destructive"
+                  >
+                    ✕
+                  </Button>
                 </div>
-              )}
-              {lastDecision && (
-                <div className={`text-4xl font-bold ${
-                  lastDecision === 'correct' ? 'text-accent' : 'text-destructive'
-                }`}>
-                  {lastDecision === 'correct' ? '✅ CORRECT!' : '❌ WRONG!'}
-                </div>
-              )}
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <Button
-                onClick={() => makeDecision('hug')}
-                disabled={!currentMonster || lastDecision !== null}
-                className="h-16 text-lg font-semibold bg-secondary hover:bg-secondary/80 text-secondary-foreground"
-              >
-                <Heart className="w-6 h-6 mr-2" />
-                Hug
-              </Button>
-              <Button
-                onClick={() => makeDecision('kill')}
-                disabled={!currentMonster || lastDecision !== null}
-                variant="destructive"
-                className="h-16 text-lg font-semibold"
-              >
-                <X className="w-6 h-6 mr-2" />
-                Kill
-              </Button>
-            </div>
-          </div>
+              ))}
+            </CardContent>
+          </Card>
         )}
 
-        {gameState === 'gameOver' && (
-          <div className="space-y-6">
-            <div className="text-center space-y-4">
-              <div className="text-6xl">💀</div>
-              <div className="space-y-2">
-                <h2 className="text-2xl font-bold text-foreground">Game Over!</h2>
-                <p className="text-foreground/80">
-                  You survived {score} monsters
+        {/* Completed Todos */}
+        {completedTodos.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5 text-secondary" />
+                  Erledigte Aufgaben
+                </span>
+                <Badge variant="outline">
+                  {completedTodos.length} {completedTodos.length === 1 ? 'erledigt' : 'erledigt'}
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {completedTodos.slice(-5).map(todo => (
+                <div 
+                  key={todo.id} 
+                  className="flex items-center gap-3 p-4 border rounded-lg bg-muted/30"
+                >
+                  <CheckCircle className="w-5 h-5 text-secondary" />
+                  <span className="flex-1 text-muted-foreground line-through">{todo.text}</span>
+                  <Badge variant="secondary">
+                    +{todo.points} {todo.points === 1 ? 'Punkt' : 'Punkte'}
+                  </Badge>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => deleteTodo(todo.id)}
+                    className="text-muted-foreground hover:text-destructive"
+                  >
+                    ✕
+                  </Button>
+                </div>
+              ))}
+              {completedTodos.length > 5 && (
+                <p className="text-sm text-muted-foreground text-center">
+                  ... und {completedTodos.length - 5} weitere erledigte Aufgaben
                 </p>
-                {score === highScore && score > 0 && (
-                  <p className="text-accent font-semibold">New High Score! 🎉</p>
-                )}
-              </div>
-            </div>
-            <Button 
-              onClick={startGame}
-              size="lg" 
-              className="w-full text-lg font-semibold"
-            >
-              Play Again
-            </Button>
-          </div>
+              )}
+            </CardContent>
+          </Card>
         )}
-      </Card>
+
+        {/* Empty State */}
+        {todos.length === 0 && (
+          <Card>
+            <CardContent className="py-12 text-center space-y-4">
+              <Target className="w-16 h-16 text-muted-foreground mx-auto" />
+              <h3 className="text-xl font-semibold text-foreground">
+                Bereit für deine erste Aufgabe?
+              </h3>
+              <p className="text-muted-foreground max-w-md mx-auto">
+                Füge oben deine erste Lernaufgabe hinzu und sammle Punkte für jeden Erfolg!
+              </p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   )
 }
