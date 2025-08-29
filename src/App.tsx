@@ -31,6 +31,7 @@ interface Flower {
   growthTime: number // hours to fully grow
   pointsPerHour: number // passive point generation
   comboBonus?: string[] // flower IDs that give bonus when planted nearby
+  category: 'flowers' | 'fruits' | 'vegetables' | 'herbs' | 'trees'
 }
 
 interface PlantedFlower {
@@ -95,189 +96,189 @@ const flowers: Flower[] = [
   // Blumen
   { 
     id: 'daisy', name: 'Gänseblümchen', cost: 5, emoji: '🌼', color: '#ffffff', size: 'small',
-    rarity: 'common', growthTime: 2, pointsPerHour: 0.5, comboBonus: ['tulip', 'sunflower']
+    rarity: 'common', growthTime: 2, pointsPerHour: 0.5, comboBonus: ['tulip', 'sunflower'], category: 'flowers'
   },
   { 
     id: 'tulip', name: 'Tulpe', cost: 8, emoji: '🌷', color: '#ff69b4', size: 'medium',
-    rarity: 'common', growthTime: 3, pointsPerHour: 0.8, comboBonus: ['daisy', 'rose']
+    rarity: 'common', growthTime: 3, pointsPerHour: 0.8, comboBonus: ['daisy', 'rose'], category: 'flowers'
   },
   { 
     id: 'sunflower', name: 'Sonnenblume', cost: 12, emoji: '🌻', color: '#ffd700', size: 'large',
-    rarity: 'common', growthTime: 4, pointsPerHour: 1.2, comboBonus: ['daisy']
+    rarity: 'common', growthTime: 4, pointsPerHour: 1.2, comboBonus: ['daisy'], category: 'flowers'
   },
   { 
     id: 'rose', name: 'Rose', cost: 15, emoji: '🌹', color: '#ff0000', size: 'medium',
-    rarity: 'rare', growthTime: 6, pointsPerHour: 2, comboBonus: ['tulip', 'lotus']
+    rarity: 'rare', growthTime: 6, pointsPerHour: 2, comboBonus: ['tulip', 'lotus'], category: 'flowers'
   },
   { 
     id: 'hibiscus', name: 'Hibiskus', cost: 20, emoji: '🌺', color: '#ff1493', size: 'large',
-    rarity: 'rare', growthTime: 8, pointsPerHour: 2.5, comboBonus: ['orchid']
+    rarity: 'rare', growthTime: 8, pointsPerHour: 2.5, comboBonus: ['orchid'], category: 'flowers'
   },
   { 
     id: 'cherry', name: 'Kirschblüte', cost: 25, emoji: '🌸', color: '#ffb6c1', size: 'medium',
-    rarity: 'epic', growthTime: 12, pointsPerHour: 3, comboBonus: ['lotus', 'orchid']
+    rarity: 'epic', growthTime: 12, pointsPerHour: 3, comboBonus: ['lotus', 'orchid'], category: 'flowers'
   },
   { 
     id: 'lotus', name: 'Lotus', cost: 30, emoji: '🪷', color: '#dda0dd', size: 'large',
-    rarity: 'epic', growthTime: 16, pointsPerHour: 4, comboBonus: ['rose', 'cherry']
+    rarity: 'epic', growthTime: 16, pointsPerHour: 4, comboBonus: ['rose', 'cherry'], category: 'flowers'
   },
   { 
     id: 'orchid', name: 'Orchidee', cost: 40, emoji: '🌺', color: '#da70d6', size: 'large',
-    rarity: 'legendary', growthTime: 24, pointsPerHour: 6, comboBonus: ['hibiscus', 'cherry']
+    rarity: 'legendary', growthTime: 24, pointsPerHour: 6, comboBonus: ['hibiscus', 'cherry'], category: 'flowers'
   },
   { 
     id: 'phoenix', name: 'Phoenix-Blume', cost: 100, emoji: '🔥', color: '#ff4500', size: 'large',
-    rarity: 'legendary', growthTime: 48, pointsPerHour: 15, comboBonus: ['lotus', 'orchid']
+    rarity: 'legendary', growthTime: 48, pointsPerHour: 15, comboBonus: ['lotus', 'orchid'], category: 'flowers'
   },
   
   // Obst
   { 
     id: 'apple', name: 'Apfelbaum', cost: 18, emoji: '🍎', color: '#ff0000', size: 'large',
-    rarity: 'common', growthTime: 8, pointsPerHour: 1.8, comboBonus: ['cherry_tree', 'pear']
+    rarity: 'common', growthTime: 8, pointsPerHour: 1.8, comboBonus: ['cherry_tree', 'pear'], category: 'trees'
   },
   { 
     id: 'cherry_tree', name: 'Kirschbaum', cost: 22, emoji: '🍒', color: '#dc143c', size: 'large',
-    rarity: 'rare', growthTime: 10, pointsPerHour: 2.2, comboBonus: ['apple', 'peach']
+    rarity: 'rare', growthTime: 10, pointsPerHour: 2.2, comboBonus: ['apple', 'peach'], category: 'trees'
   },
   { 
     id: 'pear', name: 'Birnenbaum', cost: 16, emoji: '🍐', color: '#90ee90', size: 'large',
-    rarity: 'common', growthTime: 7, pointsPerHour: 1.6, comboBonus: ['apple', 'grape']
+    rarity: 'common', growthTime: 7, pointsPerHour: 1.6, comboBonus: ['apple', 'grape'], category: 'trees'
   },
   { 
     id: 'peach', name: 'Pfirsichbaum', cost: 25, emoji: '🍑', color: '#ffb347', size: 'large',
-    rarity: 'rare', growthTime: 12, pointsPerHour: 2.8, comboBonus: ['cherry_tree', 'plum']
+    rarity: 'rare', growthTime: 12, pointsPerHour: 2.8, comboBonus: ['cherry_tree', 'plum'], category: 'trees'
   },
   { 
     id: 'grape', name: 'Weinrebe', cost: 35, emoji: '🍇', color: '#800080', size: 'medium',
-    rarity: 'epic', growthTime: 15, pointsPerHour: 4.5, comboBonus: ['pear', 'strawberry']
+    rarity: 'epic', growthTime: 15, pointsPerHour: 4.5, comboBonus: ['pear', 'strawberry'], category: 'fruits'
   },
   { 
     id: 'strawberry', name: 'Erdbeeren', cost: 14, emoji: '🍓', color: '#ff1493', size: 'small',
-    rarity: 'common', growthTime: 5, pointsPerHour: 1.4, comboBonus: ['grape', 'blueberry']
+    rarity: 'common', growthTime: 5, pointsPerHour: 1.4, comboBonus: ['grape', 'blueberry'], category: 'fruits'
   },
   { 
     id: 'blueberry', name: 'Heidelbeeren', cost: 19, emoji: '🫐', color: '#4169e1', size: 'small',
-    rarity: 'rare', growthTime: 6, pointsPerHour: 2.1, comboBonus: ['strawberry', 'raspberry']
+    rarity: 'rare', growthTime: 6, pointsPerHour: 2.1, comboBonus: ['strawberry', 'raspberry'], category: 'fruits'
   },
   { 
     id: 'raspberry', name: 'Himbeeren', cost: 17, emoji: '🍰', color: '#e30b5c', size: 'small',
-    rarity: 'common', growthTime: 5, pointsPerHour: 1.7, comboBonus: ['blueberry', 'strawberry']
+    rarity: 'common', growthTime: 5, pointsPerHour: 1.7, comboBonus: ['blueberry', 'strawberry'], category: 'fruits'
   },
   { 
     id: 'mango', name: 'Mangobaum', cost: 45, emoji: '🥭', color: '#ffa500', size: 'large',
-    rarity: 'epic', growthTime: 20, pointsPerHour: 5.5, comboBonus: ['coconut', 'pineapple']
+    rarity: 'epic', growthTime: 20, pointsPerHour: 5.5, comboBonus: ['coconut', 'pineapple'], category: 'trees'
   },
   { 
     id: 'coconut', name: 'Kokospalme', cost: 60, emoji: '🥥', color: '#8b4513', size: 'large',
-    rarity: 'legendary', growthTime: 30, pointsPerHour: 8, comboBonus: ['mango', 'pineapple']
+    rarity: 'legendary', growthTime: 30, pointsPerHour: 8, comboBonus: ['mango', 'pineapple'], category: 'trees'
   },
   { 
     id: 'pineapple', name: 'Ananas', cost: 50, emoji: '🍍', color: '#ffd700', size: 'medium',
-    rarity: 'epic', growthTime: 18, pointsPerHour: 6, comboBonus: ['mango', 'coconut']
+    rarity: 'epic', growthTime: 18, pointsPerHour: 6, comboBonus: ['mango', 'coconut'], category: 'fruits'
   },
   
   // Gemüse
   { 
     id: 'carrot', name: 'Karotten', cost: 10, emoji: '🥕', color: '#ff8c00', size: 'small',
-    rarity: 'common', growthTime: 3, pointsPerHour: 1, comboBonus: ['potato', 'radish']
+    rarity: 'common', growthTime: 3, pointsPerHour: 1, comboBonus: ['potato', 'radish'], category: 'vegetables'
   },
   { 
     id: 'potato', name: 'Kartoffeln', cost: 12, emoji: '🥔', color: '#deb887', size: 'small',
-    rarity: 'common', growthTime: 4, pointsPerHour: 1.2, comboBonus: ['carrot', 'onion']
+    rarity: 'common', growthTime: 4, pointsPerHour: 1.2, comboBonus: ['carrot', 'onion'], category: 'vegetables'
   },
   { 
     id: 'tomato', name: 'Tomaten', cost: 15, emoji: '🍅', color: '#ff6347', size: 'medium',
-    rarity: 'common', growthTime: 6, pointsPerHour: 1.8, comboBonus: ['bell_pepper', 'eggplant']
+    rarity: 'common', growthTime: 6, pointsPerHour: 1.8, comboBonus: ['bell_pepper', 'eggplant'], category: 'vegetables'
   },
   { 
     id: 'bell_pepper', name: 'Paprika', cost: 18, emoji: '🫑', color: '#32cd32', size: 'medium',
-    rarity: 'rare', growthTime: 7, pointsPerHour: 2.2, comboBonus: ['tomato', 'chili']
+    rarity: 'rare', growthTime: 7, pointsPerHour: 2.2, comboBonus: ['tomato', 'chili'], category: 'vegetables'
   },
   { 
     id: 'eggplant', name: 'Aubergine', cost: 20, emoji: '🍆', color: '#800080', size: 'medium',
-    rarity: 'rare', growthTime: 8, pointsPerHour: 2.5, comboBonus: ['tomato', 'zucchini']
+    rarity: 'rare', growthTime: 8, pointsPerHour: 2.5, comboBonus: ['tomato', 'zucchini'], category: 'vegetables'
   },
   { 
     id: 'corn', name: 'Mais', cost: 22, emoji: '🌽', color: '#ffd700', size: 'large',
-    rarity: 'rare', growthTime: 9, pointsPerHour: 2.8, comboBonus: ['pumpkin', 'cucumber']
+    rarity: 'rare', growthTime: 9, pointsPerHour: 2.8, comboBonus: ['pumpkin', 'cucumber'], category: 'vegetables'
   },
   { 
     id: 'pumpkin', name: 'Kürbis', cost: 28, emoji: '🎃', color: '#ff8c00', size: 'large',
-    rarity: 'epic', growthTime: 12, pointsPerHour: 3.5, comboBonus: ['corn', 'squash']
+    rarity: 'epic', growthTime: 12, pointsPerHour: 3.5, comboBonus: ['corn', 'squash'], category: 'vegetables'
   },
   { 
     id: 'cucumber', name: 'Gurken', cost: 16, emoji: '🥒', color: '#90ee90', size: 'medium',
-    rarity: 'common', growthTime: 5, pointsPerHour: 1.6, comboBonus: ['corn', 'zucchini']
+    rarity: 'common', growthTime: 5, pointsPerHour: 1.6, comboBonus: ['corn', 'zucchini'], category: 'vegetables'
   },
   { 
     id: 'zucchini', name: 'Zucchini', cost: 19, emoji: '🥒', color: '#228b22', size: 'medium',
-    rarity: 'rare', growthTime: 6, pointsPerHour: 2.1, comboBonus: ['eggplant', 'cucumber']
+    rarity: 'rare', growthTime: 6, pointsPerHour: 2.1, comboBonus: ['eggplant', 'cucumber'], category: 'vegetables'
   },
   { 
     id: 'lettuce', name: 'Salat', cost: 8, emoji: '🥬', color: '#90ee90', size: 'small',
-    rarity: 'common', growthTime: 2, pointsPerHour: 0.8, comboBonus: ['spinach', 'cabbage']
+    rarity: 'common', growthTime: 2, pointsPerHour: 0.8, comboBonus: ['spinach', 'cabbage'], category: 'vegetables'
   },
   { 
     id: 'spinach', name: 'Spinat', cost: 11, emoji: '🥬', color: '#006400', size: 'small',
-    rarity: 'common', growthTime: 3, pointsPerHour: 1.1, comboBonus: ['lettuce', 'kale']
+    rarity: 'common', growthTime: 3, pointsPerHour: 1.1, comboBonus: ['lettuce', 'kale'], category: 'vegetables'
   },
   { 
     id: 'cabbage', name: 'Kohl', cost: 14, emoji: '🥬', color: '#90ee90', size: 'medium',
-    rarity: 'common', growthTime: 5, pointsPerHour: 1.4, comboBonus: ['lettuce', 'broccoli']
+    rarity: 'common', growthTime: 5, pointsPerHour: 1.4, comboBonus: ['lettuce', 'broccoli'], category: 'vegetables'
   },
   { 
     id: 'broccoli', name: 'Brokkoli', cost: 17, emoji: '🥦', color: '#228b22', size: 'medium',
-    rarity: 'rare', growthTime: 6, pointsPerHour: 2, comboBonus: ['cabbage', 'cauliflower']
+    rarity: 'rare', growthTime: 6, pointsPerHour: 2, comboBonus: ['cabbage', 'cauliflower'], category: 'vegetables'
   },
   { 
     id: 'cauliflower', name: 'Blumenkohl', cost: 19, emoji: '🥬', color: '#f5f5dc', size: 'medium',
-    rarity: 'rare', growthTime: 7, pointsPerHour: 2.3, comboBonus: ['broccoli', 'radish']
+    rarity: 'rare', growthTime: 7, pointsPerHour: 2.3, comboBonus: ['broccoli', 'radish'], category: 'vegetables'
   },
   { 
     id: 'radish', name: 'Rettich', cost: 9, emoji: '🥬', color: '#ff69b4', size: 'small',
-    rarity: 'common', growthTime: 2, pointsPerHour: 0.9, comboBonus: ['carrot', 'cauliflower']
+    rarity: 'common', growthTime: 2, pointsPerHour: 0.9, comboBonus: ['carrot', 'cauliflower'], category: 'vegetables'
   },
   { 
     id: 'onion', name: 'Zwiebeln', cost: 13, emoji: '🧅', color: '#dda0dd', size: 'small',
-    rarity: 'common', growthTime: 4, pointsPerHour: 1.3, comboBonus: ['potato', 'garlic']
+    rarity: 'common', growthTime: 4, pointsPerHour: 1.3, comboBonus: ['potato', 'garlic'], category: 'vegetables'
   },
   { 
     id: 'garlic', name: 'Knoblauch', cost: 15, emoji: '🧄', color: '#f5f5dc', size: 'small',
-    rarity: 'rare', growthTime: 5, pointsPerHour: 1.8, comboBonus: ['onion', 'herbs']
+    rarity: 'rare', growthTime: 5, pointsPerHour: 1.8, comboBonus: ['onion', 'herbs'], category: 'vegetables'
   },
   { 
     id: 'chili', name: 'Chili', cost: 24, emoji: '🌶️', color: '#ff0000', size: 'small',
-    rarity: 'epic', growthTime: 8, pointsPerHour: 3.2, comboBonus: ['bell_pepper', 'herbs']
+    rarity: 'epic', growthTime: 8, pointsPerHour: 3.2, comboBonus: ['bell_pepper', 'herbs'], category: 'vegetables'
   },
   
   // Kräuter & Spezialitäten
   { 
     id: 'herbs', name: 'Kräutergarten', cost: 26, emoji: '🌿', color: '#90ee90', size: 'medium',
-    rarity: 'epic', growthTime: 10, pointsPerHour: 3.8, comboBonus: ['garlic', 'chili']
+    rarity: 'epic', growthTime: 10, pointsPerHour: 3.8, comboBonus: ['garlic', 'chili'], category: 'herbs'
   },
   { 
     id: 'mushroom', name: 'Pilze', cost: 32, emoji: '🍄', color: '#8b4513', size: 'small',
-    rarity: 'epic', growthTime: 14, pointsPerHour: 4.2, comboBonus: ['truffle', 'herbs']
+    rarity: 'epic', growthTime: 14, pointsPerHour: 4.2, comboBonus: ['truffle', 'herbs'], category: 'herbs'
   },
   { 
     id: 'truffle', name: 'Trüffel', cost: 80, emoji: '🍄', color: '#2f4f4f', size: 'small',
-    rarity: 'legendary', growthTime: 36, pointsPerHour: 12, comboBonus: ['mushroom', 'herbs']
+    rarity: 'legendary', growthTime: 36, pointsPerHour: 12, comboBonus: ['mushroom', 'herbs'], category: 'herbs'
   },
   { 
     id: 'bamboo', name: 'Bambus', cost: 38, emoji: '🎋', color: '#90ee90', size: 'large',
-    rarity: 'epic', growthTime: 16, pointsPerHour: 4.8, comboBonus: ['herbs', 'tea']
+    rarity: 'epic', growthTime: 16, pointsPerHour: 4.8, comboBonus: ['herbs', 'tea'], category: 'trees'
   },
   { 
     id: 'tea', name: 'Tee-Strauch', cost: 42, emoji: '🍃', color: '#90ee90', size: 'medium',
-    rarity: 'epic', growthTime: 18, pointsPerHour: 5.2, comboBonus: ['bamboo', 'herbs']
+    rarity: 'epic', growthTime: 18, pointsPerHour: 5.2, comboBonus: ['bamboo', 'herbs'], category: 'herbs'
   },
   { 
     id: 'cactus', name: 'Kaktus', cost: 35, emoji: '🌵', color: '#90ee90', size: 'medium',
-    rarity: 'epic', growthTime: 24, pointsPerHour: 4, comboBonus: [] // Kaktus ist unabhängig
+    rarity: 'epic', growthTime: 24, pointsPerHour: 4, comboBonus: [], category: 'herbs' // Kaktus ist unabhängig
   },
   { 
     id: 'bonsai', name: 'Bonsai-Baum', cost: 120, emoji: '🌳', color: '#228b22', size: 'small',
-    rarity: 'legendary', growthTime: 72, pointsPerHour: 18, comboBonus: ['bamboo', 'tea']
+    rarity: 'legendary', growthTime: 72, pointsPerHour: 18, comboBonus: ['bamboo', 'tea'], category: 'trees'
   }
 ]
 
@@ -498,6 +499,7 @@ function App() {
   const [lastWateringDate, setLastWateringDate] = useKV<string>('last-watering-date', '')
   const [currentWeather, setCurrentWeather] = useKV<CurrentWeather | null>('current-weather', null)
   const [draggedFlower, setDraggedFlower] = useState<Flower | null>(null)
+  const [selectedCategory, setSelectedCategory] = useState<string>('all')
   
   // Gardener state
   const [gardenerPosition, setGardenerPosition] = useState({ x: 50, y: 80 })
@@ -1099,6 +1101,30 @@ function App() {
     }, 0)
     
     return { totalValue, passiveIncome }
+  }
+
+  // Category filter utilities
+  const getFilteredFlowers = () => {
+    if (selectedCategory === 'all') return flowers
+    return flowers.filter(flower => flower.category === selectedCategory)
+  }
+
+  const getCategoryStats = () => {
+    const categories = ['flowers', 'fruits', 'vegetables', 'herbs', 'trees'] as const
+    return categories.map(category => ({
+      id: category,
+      name: category === 'flowers' ? 'Blumen' :
+            category === 'fruits' ? 'Obst' :
+            category === 'vegetables' ? 'Gemüse' :
+            category === 'herbs' ? 'Kräuter' :
+            'Bäume',
+      emoji: category === 'flowers' ? '🌸' :
+             category === 'fruits' ? '🍎' :
+             category === 'vegetables' ? '🥕' :
+             category === 'herbs' ? '🌿' :
+             '🌳',
+      count: flowers.filter(f => f.category === category).length
+    }))
   }
 
   const pendingTodos = (todos || []).filter(todo => !todo.completed)
@@ -1831,13 +1857,46 @@ function App() {
                       <ShoppingCart className="w-5 h-5" />
                       Garten-Shop
                     </CardTitle>
-                    <p className="text-xs text-muted-foreground">
-                      🌸 Blumen • 🍎 Obst • 🥕 Gemüse • 🌿 Kräuter & mehr
-                    </p>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {flowers.map(flower => (
+                    {/* Category Filter Tabs */}
+                    <div className="mb-6">
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        <Button
+                          variant={selectedCategory === 'all' ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => setSelectedCategory('all')}
+                          className="text-xs"
+                        >
+                          🌱 Alle ({flowers.length})
+                        </Button>
+                        {getCategoryStats().map(category => (
+                          <Button
+                            key={category.id}
+                            variant={selectedCategory === category.id ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setSelectedCategory(category.id)}
+                            className="text-xs"
+                          >
+                            {category.emoji} {category.name} ({category.count})
+                          </Button>
+                        ))}
+                      </div>
+                      
+                      {/* Category Description */}
+                      <div className="text-xs text-muted-foreground text-center p-2 bg-muted/30 rounded">
+                        {selectedCategory === 'all' && "🌱 Alle verfügbaren Pflanzen im Shop"}
+                        {selectedCategory === 'flowers' && "🌸 Wunderschöne Blumen für einen farbenfrohen Garten"}
+                        {selectedCategory === 'fruits' && "🍎 Süße Früchte für leckere Erträge"}
+                        {selectedCategory === 'vegetables' && "🥕 Gesundes Gemüse für den täglichen Bedarf"}
+                        {selectedCategory === 'herbs' && "🌿 Aromatische Kräuter und besondere Pflanzen"}
+                        {selectedCategory === 'trees' && "🌳 Majestätische Bäume für langfristige Investitionen"}
+                      </div>
+                    </div>
+
+                    {/* Plant Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-96 overflow-y-auto pr-2">
+                      {getFilteredFlowers().map(flower => (
                         <div
                           key={flower.id}
                           className="flex flex-col items-center p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
@@ -1848,12 +1907,32 @@ function App() {
                             {flower.emoji}
                           </div>
                           <span className="text-sm font-medium text-center mb-2 leading-tight">{flower.name}</span>
-                          <Badge className={`text-xs mb-2 ${getRarityBadge(flower.rarity)}`}>
-                            {flower.rarity}
-                          </Badge>
+                          
+                          {/* Rarity and Category Badges */}
+                          <div className="flex gap-1 mb-2">
+                            <Badge className={`text-xs ${getRarityBadge(flower.rarity)}`}>
+                              {flower.rarity}
+                            </Badge>
+                            <Badge variant="outline" className="text-xs">
+                              {flower.category === 'flowers' ? '🌸' :
+                               flower.category === 'fruits' ? '🍎' :
+                               flower.category === 'vegetables' ? '🥕' :
+                               flower.category === 'herbs' ? '🌿' :
+                               '🌳'}
+                            </Badge>
+                          </div>
+                          
                           <div className="text-xs text-muted-foreground mb-2 text-center">
                             🕒 {flower.growthTime}h | ⚡ {flower.pointsPerHour}/h
                           </div>
+                          
+                          {/* Combo Bonus Info */}
+                          {flower.comboBonus && flower.comboBonus.length > 0 && (
+                            <div className="text-xs text-blue-600 mb-2 text-center">
+                              ✨ Kombo-Bonus möglich
+                            </div>
+                          )}
+                          
                           <Badge 
                             variant={totalPoints && totalPoints >= flower.cost ? "default" : "secondary"}
                             className="mb-2 text-xs"
@@ -1871,9 +1950,46 @@ function App() {
                         </div>
                       ))}
                     </div>
-                    <p className="text-xs text-muted-foreground mt-4 text-center">
-                      💡 Ziehe Pflanzen per Drag & Drop in deinen Garten! 🌟 Seltene Sorten haben bessere Boni
-                    </p>
+                    
+                    {/* Empty Category State */}
+                    {getFilteredFlowers().length === 0 && (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <p>Keine Pflanzen in dieser Kategorie verfügbar</p>
+                      </div>
+                    )}
+                    
+                    <div className="mt-4 space-y-2">
+                      <p className="text-xs text-muted-foreground text-center">
+                        💡 Ziehe Pflanzen per Drag & Drop in deinen Garten!
+                      </p>
+                      <p className="text-xs text-muted-foreground text-center">
+                        🌟 Verschiedene Kategorien bieten unterschiedliche Vorteile
+                      </p>
+                      
+                      {/* Quick Stats for Selected Category */}
+                      {selectedCategory !== 'all' && (
+                        <div className="grid grid-cols-3 gap-2 mt-3 text-xs">
+                          <div className="text-center p-2 bg-muted/30 rounded">
+                            <div className="font-medium">
+                              {getFilteredFlowers().filter(f => f.rarity === 'common').length}
+                            </div>
+                            <div className="text-muted-foreground">Gewöhnlich</div>
+                          </div>
+                          <div className="text-center p-2 bg-muted/30 rounded">
+                            <div className="font-medium">
+                              {getFilteredFlowers().filter(f => ['rare', 'epic'].includes(f.rarity)).length}
+                            </div>
+                            <div className="text-muted-foreground">Selten+</div>
+                          </div>
+                          <div className="text-center p-2 bg-muted/30 rounded">
+                            <div className="font-medium">
+                              {Math.round(getFilteredFlowers().reduce((sum, f) => sum + f.cost, 0) / getFilteredFlowers().length)}P
+                            </div>
+                            <div className="text-muted-foreground">Ø Kosten</div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               </div>
