@@ -183,6 +183,13 @@ const breakMessages = [
   "Auszeit! Lass dein Wissen sacken ✨"
 ]
 
+// Helper function to format time in mm:ss format
+const formatTime = (seconds: number): string => {
+  const minutes = Math.floor(seconds / 60)
+  const remainingSeconds = seconds % 60
+  return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`
+}
+
 function App() {
   const [newTodoText, setNewTodoText] = useState('')
   const [newTodoPoints, setNewTodoPoints] = useState('1')
